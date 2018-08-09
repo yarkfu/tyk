@@ -1001,6 +1001,9 @@ func main() {
 
 	mainLog.Info("Stop signal received.")
 
+	// stop quota counters
+	sessionLimiter.stopCounters()
+
 	// stop analytics workers
 	if config.Global().EnableAnalytics && analytics.Store == nil {
 		analytics.Stop()
