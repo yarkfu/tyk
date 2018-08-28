@@ -1,6 +1,7 @@
 // Tyk Gateway API
 //
 // Code below describes Tyk Gateway API
+// version: 1.7.0
 //
 //     Schemes: http, https
 //     Host: localhost
@@ -110,7 +111,7 @@ func getSpecForOrg(apiID string) *APISpec {
 		}
 	}
 
-	// If we can't find a spec, it doesn;t matter, because we default to Redis anyway, grab whatever you can find
+	// If we can't find a spec, it doesn't matter, because we default to Redis anyway, grab whatever you can find
 	for _, v := range apisByID {
 		return v
 	}
@@ -629,6 +630,27 @@ func handleDeleteAPI(apiID string) (interface{}, int) {
 //         description: API definition
 //         schema:
 //           $ref: "#/definitions/APIDefinition"
+
+// swagger:route DELETE /apis/{apiID} apis deleteApi
+//
+// Delete API
+// Only if used without dashboard
+//
+//     Responses:
+//       '200':
+//         description: API deleted
+//         schema:
+//           $ref: "#/responses/apiStatusMessage"
+//         examples:
+//           status: "ok"
+//           message: "API deleted"
+//			 '400':
+//				 description: No API ID specified
+//				 schema:
+//					 $ref: "#/responses/apiStatusMessage"
+//				 examples:
+//					 status: "error"
+//					 message: "API ID not specified"
 func apiHandler(w http.ResponseWriter, r *http.Request) {
 	apiID := mux.Vars(r)["apiID"]
 
