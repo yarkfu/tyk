@@ -1290,6 +1290,8 @@ func createKeyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewClientRequest is an outward facing JSON object translated from osin OAuthClients
+//
+// swagger:model
 type NewClientRequest struct {
 	ClientID          string `json:"client_id"`
 	ClientRedirectURI string `json:"redirect_uri"`
@@ -1302,6 +1304,25 @@ func oauthClientStorageID(clientID string) string {
 	return prefixClient + clientID
 }
 
+// swagger:operation POST /oauth/clients/create oauth createOAuthClient
+//
+// Create oAuth client
+//
+//---
+// requestBody:
+//   content:
+//     application/json:
+//       schema:
+//         "$ref": "#/definitions/NewClientRequest"
+//       examples:
+//         client_id: test
+//         api_id: id
+//         policy_id: policy
+// responses:
+//   200:
+//     description: Client created
+//     schema:
+//       "$ref": "#/responses/OAuthClient"
 func createOauthClient(w http.ResponseWriter, r *http.Request) {
 	var newOauthClient NewClientRequest
 	if err := json.NewDecoder(r.Body).Decode(&newOauthClient); err != nil {
@@ -1430,6 +1451,38 @@ func createOauthClient(w http.ResponseWriter, r *http.Request) {
 	doJSONWrite(w, http.StatusOK, clientData)
 }
 
+// swagger:operation DELETE /oauth/refresh/{keyName} oauth invalidateOAuthRefresh
+//
+// Invalidate oAuth refresh token
+//
+//---
+// parameters:
+//   - in: query
+//     name: api_id
+//     required: true
+//     schema:
+//       type: string
+//     description: API id
+//   - in: path
+//     name: keyName
+//     required: true
+//     schema:
+//       type: string
+//     description: Refresh token
+// requestBody:
+//   content:
+//     application/json:
+//       schema:
+//         "$ref": "#/definitions/NewClientRequest"
+//       examples:
+//         client_id: test
+//         api_id: id
+//         policy_id: policy
+// responses:
+//   200:
+//     description: Deleted
+//     schema:
+//       "$ref": "#/responses/apiModifyKeySuccess"
 func invalidateOauthRefresh(w http.ResponseWriter, r *http.Request) {
 	apiID := r.URL.Query().Get("api_id")
 	if apiID == "" {
@@ -1497,6 +1550,76 @@ func invalidateOauthRefresh(w http.ResponseWriter, r *http.Request) {
 	doJSONWrite(w, http.StatusOK, success)
 }
 
+// swagger:operation GET /oauth/clients/{apiID} oauth listOAuthClients
+//
+// List oAuth client
+//
+//---
+// parameters:
+//   - in: path
+//     name: apiID
+//     required: true
+//     schema:
+//       type: string
+//     description: API ID
+// responses:
+//   200:
+//     description: Get client details or list of clients
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/responses/NewClientRequest"
+
+// swagger:operation GET /oauth/clients/{apiID}/{keyName} oauth getOAuthClient
+//
+// Get oAuth client
+//
+//---
+// parameters:
+//   - in: path
+//     name: apiID
+//     required: true
+//     schema:
+//       type: string
+//     description: API ID
+//   - in: path
+//     name: keyName
+//     required: true
+//     schema:
+//       type: string
+//     description: Client ID
+// responses:
+//   200:
+//     description: Get client details or list of clients
+//     schema:
+//       "$ref": "#/responses/NewClientRequest"
+
+// swagger:operation DELETE /oauth/clients/{apiID}/{keyName} oauth deleteOAuthClient
+//
+// Delete oAuth client
+//
+//---
+// parameters:
+//   - in: path
+//     name: apiID
+//     required: true
+//     schema:
+//       type: string
+//     description: API ID
+//   - in: path
+//     name: keyName
+//     required: true
+//     schema:
+//       type: string
+//     description: Client ID
+// responses:
+//   200:
+//     description: oAuth client deleted
+//     schema:
+//       "$ref": "#/responses/apiModifyKeySuccess"
+//     examples:
+//       status: "ok"
+//       action: "deleted"
 func oAuthClientHandler(w http.ResponseWriter, r *http.Request) {
 	apiID := mux.Vars(r)["apiID"]
 	keyName := mux.Vars(r)["keyName"]
@@ -1520,6 +1643,31 @@ func oAuthClientHandler(w http.ResponseWriter, r *http.Request) {
 	doJSONWrite(w, code, obj)
 }
 
+// swagger:operation GET /oauth/clients/{apiID}/{keyName}/tokens oauth getOAuthClientTokens
+//
+// Get oAuth client tokens
+//
+//---
+// parameters:
+//   - in: path
+//     name: apiID
+//     required: true
+//     schema:
+//       type: string
+//     description: API ID
+//   - in: path
+//     name: keyName
+//     required: true
+//     schema:
+//       type: string
+//     description: Client ID
+// responses:
+//   200:
+//     description: Get list of tokens
+//     schema:
+//       type: array
+//       items:
+//         type: string
 func oAuthClientTokensHandler(w http.ResponseWriter, r *http.Request) {
 	apiID := mux.Vars(r)["apiID"]
 	keyName := mux.Vars(r)["keyName"]
@@ -1718,6 +1866,23 @@ func userRatesCheck(w http.ResponseWriter, r *http.Request) {
 	doJSONWrite(w, http.StatusOK, returnSession)
 }
 
+// swagger:operation DELETE /cache/{apiID} cache invalidateCache
+//
+// Invalidate cache
+//
+//---
+// parameters:
+//   - in: path
+//     name: apiID
+//     required: true
+//     schema:
+//       type: string
+//     description: API ID
+// responses:
+//   200:
+//     description: Invalidate cache
+//     schema:
+//       "$ref": "#/responses/apiOk"
 func invalidateCacheHandler(w http.ResponseWriter, r *http.Request) {
 	apiID := mux.Vars(r)["apiID"]
 
