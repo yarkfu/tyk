@@ -632,7 +632,7 @@ func handleDeleteAPI(apiID string) (interface{}, int) {
 // - in: path
 //   name: apiID
 //   required: true
-//   type: integer
+//   type: string
 //   minimum: 1
 //   description: The API ID
 // responses:
@@ -651,7 +651,7 @@ func handleDeleteAPI(apiID string) (interface{}, int) {
 // - in: path
 //   name: apiID
 //   required: true
-//   type: integer
+//   type: string
 //   minimum: 1
 //   description: The API ID
 // responses:
@@ -772,7 +772,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 // - in: path
 //   name: keyID
 //   required: true
-//   type: integer
+//   type: string
 //   minimum: 1
 //   description: The Key ID
 // responses:
@@ -800,7 +800,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 // - in: path
 //   name: keyID
 //   required: true
-//   type: integer
+//   type: string
 //   minimum: 1
 //   description: The Key ID
 // responses:
@@ -818,7 +818,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 // - in: path
 //   name: keyID
 //   required: true
-//   type: integer
+//   type: string
 //   minimum: 1
 //   description: The Key ID
 // responses:
@@ -1304,9 +1304,9 @@ func oauthClientStorageID(clientID string) string {
 	return prefixClient + clientID
 }
 
-// swagger:operation POST /oauth/clients/create oauth createOAuthClient
+// swagger:operation POST /oauth/clients/create OAuth createOAuthClient
 //
-// Create oAuth client
+// Create an OAuth client
 //
 //---
 // requestBody:
@@ -1451,7 +1451,7 @@ func createOauthClient(w http.ResponseWriter, r *http.Request) {
 	doJSONWrite(w, http.StatusOK, clientData)
 }
 
-// swagger:operation DELETE /oauth/refresh/{keyName} oauth invalidateOAuthRefresh
+// swagger:operation DELETE /oauth/refresh/{keyName} OAuth invalidateOAuthRefresh
 //
 // Invalidate oAuth refresh token
 //
@@ -1462,7 +1462,7 @@ func createOauthClient(w http.ResponseWriter, r *http.Request) {
 //     required: true
 //     schema:
 //       type: string
-//     description: API id
+//     description: The API id
 //   - in: path
 //     name: keyName
 //     required: true
@@ -1550,9 +1550,9 @@ func invalidateOauthRefresh(w http.ResponseWriter, r *http.Request) {
 	doJSONWrite(w, http.StatusOK, success)
 }
 
-// swagger:operation GET /oauth/clients/{apiID} oauth listOAuthClients
+// swagger:operation GET /oauth/clients/{apiID} OAuth listOAuthClients
 //
-// List oAuth client
+// List oAuth clients
 //
 //---
 // parameters:
@@ -1561,18 +1561,18 @@ func invalidateOauthRefresh(w http.ResponseWriter, r *http.Request) {
 //     required: true
 //     schema:
 //       type: string
-//     description: API ID
+//     description: The API ID
 // responses:
 //   200:
-//     description: Get client details or list of clients
+//     description: Get OAuth client details or a list of OAuth clients
 //     schema:
 //       type: array
 //       items:
 //         "$ref": "#/responses/NewClientRequest"
 
-// swagger:operation GET /oauth/clients/{apiID}/{keyName} oauth getOAuthClient
+// swagger:operation GET /oauth/clients/{apiID}/{keyName} OAuth getOAuthClient
 //
-// Get oAuth client
+// Get OAuth client
 //
 //---
 // parameters:
@@ -1587,10 +1587,10 @@ func invalidateOauthRefresh(w http.ResponseWriter, r *http.Request) {
 //     required: true
 //     schema:
 //       type: string
-//     description: Client ID
+//     description: The Client ID
 // responses:
 //   200:
-//     description: Get client details or list of clients
+//     description: Get OAuth client details or a list of OAuth clients
 //     schema:
 //       "$ref": "#/responses/NewClientRequest"
 
@@ -1605,16 +1605,16 @@ func invalidateOauthRefresh(w http.ResponseWriter, r *http.Request) {
 //     required: true
 //     schema:
 //       type: string
-//     description: API ID
+//     description: The API ID
 //   - in: path
 //     name: keyName
 //     required: true
 //     schema:
 //       type: string
-//     description: Client ID
+//     description: The Client ID
 // responses:
 //   200:
-//     description: oAuth client deleted
+//     description: OAuth client deleted
 //     schema:
 //       "$ref": "#/responses/apiModifyKeySuccess"
 //     examples:
@@ -1643,9 +1643,9 @@ func oAuthClientHandler(w http.ResponseWriter, r *http.Request) {
 	doJSONWrite(w, code, obj)
 }
 
-// swagger:operation GET /oauth/clients/{apiID}/{keyName}/tokens oauth getOAuthClientTokens
+// swagger:operation GET /oauth/clients/{apiID}/{keyName}/tokens OAuth getOAuthClientTokens
 //
-// Get oAuth client tokens
+// Get OAuth client tokens
 //
 //---
 // parameters:
@@ -1654,16 +1654,16 @@ func oAuthClientHandler(w http.ResponseWriter, r *http.Request) {
 //     required: true
 //     schema:
 //       type: string
-//     description: API ID
+//     description: The API ID
 //   - in: path
 //     name: keyName
 //     required: true
 //     schema:
 //       type: string
-//     description: Client ID
+//     description: The Client ID
 // responses:
 //   200:
-//     description: Get list of tokens
+//     description: Get a list of tokens
 //     schema:
 //       type: array
 //       items:
@@ -1866,7 +1866,7 @@ func userRatesCheck(w http.ResponseWriter, r *http.Request) {
 	doJSONWrite(w, http.StatusOK, returnSession)
 }
 
-// swagger:operation DELETE /cache/{apiID} cache invalidateCache
+// swagger:operation DELETE /cache/{apiID} Cache invalidateCache
 //
 // Invalidate cache
 //
@@ -1877,7 +1877,7 @@ func userRatesCheck(w http.ResponseWriter, r *http.Request) {
 //     required: true
 //     schema:
 //       type: string
-//     description: API ID
+//     description: The API ID
 // responses:
 //   200:
 //     description: Invalidate cache
