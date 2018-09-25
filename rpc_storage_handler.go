@@ -240,11 +240,7 @@ func (r *RPCStorageHandler) Disconnect() bool {
 }
 
 func (r *RPCStorageHandler) hashKey(in string) string {
-	if !r.HashKeys {
-		// Not hashing? Return the raw key
-		return in
-	}
-	return storage.HashStr(in)
+	return storage.HashKey(in)
 }
 
 func (r *RPCStorageHandler) fixKey(keyName string) string {
@@ -995,7 +991,7 @@ func (r *RPCStorageHandler) CheckForKeyspaceChanges(orgId string) {
 }
 
 func getSessionAndCreate(keyName string, r *RPCStorageHandler) {
-	newKeyName := "apikey-" + storage.HashStr(keyName)
+	newKeyName := "apikey-" + storage.HashKey(keyName)
 	sessionString, err := r.GetRawKey(keyName)
 	if err != nil {
 		log.Error("Key not found in master - skipping")

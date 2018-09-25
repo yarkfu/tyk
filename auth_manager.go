@@ -222,6 +222,10 @@ func (b *DefaultSessionManager) UpdateSession(keyName string, session *user.Sess
 		return err
 	}
 
+	if config.Global().EnableHashedKeysOrganizationPrefix {
+		keyName := session.OrgID + "-" + keyName
+	}
+
 	// sync update
 	if hashed {
 		keyName = b.store.GetKeyPrefix() + keyName

@@ -95,6 +95,8 @@ func Init(version string, confPaths []string) {
 
 	// Add bundler commands:
 	bundler.AddTo(app)
+
+	hashOrgPrefixMigration.AddTo(app)
 }
 
 // Parse parses the command-line arguments.

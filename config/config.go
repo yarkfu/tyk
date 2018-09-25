@@ -290,6 +290,7 @@ type Config struct {
 	NewRelic                          NewRelicConfig                        `json:"newrelic"`
 	VersionHeader                     string                                `json:"version_header"`
 	EnableHashedKeysListing           bool                                  `json:"enable_hashed_keys_listing"`
+	EnableHashedKeysOrganizationPrefix bool                                  `json:"enable_hashed_keys_org_prefix"`
 	MinTokenLength                    int                                   `json:"min_token_length"`
 	DisableRegexpCache                bool                                  `json:"disable_regexp_cache"`
 	RegexpCacheExpire                 int32                                 `json:"regexp_cache_expire"`

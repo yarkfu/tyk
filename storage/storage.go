@@ -134,7 +134,7 @@ func hashFunction(algorithm string) (hash.Hash, error) {
 func HashStr(in string) string {
 	h, _ := hashFunction(TokenHashAlgo(in))
 	h.Write([]byte(in))
-	return hex.EncodeToString(h.Sum(nil))
+	hash := hex.EncodeToString(h.Sum(nil))
 }
 
 func HashKey(in string) string {
@@ -142,5 +142,10 @@ func HashKey(in string) string {
 		// Not hashing? Return the raw key
 		return in
 	}
-	return HashStr(in)
+
+	if !config.Global().EnableHashedKeysOrganizationPrefix {
+		return HashStr(in)
+	}
+
+	return TokenOrg(in) + "-" + HashStr(in)
 }

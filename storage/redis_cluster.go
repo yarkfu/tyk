@@ -177,11 +177,7 @@ func (r RedisCluster) singleton() *rediscluster.RedisCluster {
 }
 
 func (r RedisCluster) hashKey(in string) string {
-	if !r.HashKeys {
-		// Not hashing? Return the raw key
-		return in
-	}
-	return HashStr(in)
+	return HashKey(in)
 }
 
 func (r RedisCluster) fixKey(keyName string) string {
