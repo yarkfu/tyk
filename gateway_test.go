@@ -107,6 +107,8 @@ func TestMain(m *testing.M) {
 
 	// Enable coprocess and bundle downloader:
 	globalConf.CoProcessOptions.EnableCoProcess = true
+
+	globalConf.CoProcessOptions.PythonPathPrefix, _ = filepath.Abs("./")
 	globalConf.EnableBundleDownloader = true
 	globalConf.BundleBaseURL = testHttpBundles
 	globalConf.MiddlewarePath = testMiddlewarePath

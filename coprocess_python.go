@@ -308,8 +308,9 @@ func NewCoProcessDispatcher() (dispatcher coprocess.Dispatcher, err error) {
 	dispatcherPath := filepath.Join(workDir, "coprocess", "python")
 	protoPath := filepath.Join(workDir, "coprocess", "python", "proto")
 	bundleRootPath := filepath.Join(config.Global().MiddlewarePath, "bundles")
+	protobufVendorPath := filepath.Join(workDir, "coprocess", "vendor", "python-protobuf")
 
-	paths := []string{dispatcherPath, protoPath, bundleRootPath}
+	paths := []string{protobufVendorPath, dispatcherPath, protoPath, bundleRootPath}
 
 	// initDone is used to signal the end of Python initialization step:
 	initDone := make(chan error)
