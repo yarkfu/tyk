@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"gopkg.in/vmihailenco/msgpack.v2"
+	"gopkg.in/vmihailenco/msgpack.v4"
 
 	"github.com/TykTechnologies/tyk/storage"
 )

@@ -2,13 +2,12 @@ package msgpack
 
 import (
 	"fmt"
-	"io"
 	"reflect"
 
-	"gopkg.in/vmihailenco/msgpack.v2/codes"
+	"github.com/vmihailenco/msgpack/codes"
 )
 
-func (d *Decoder) bytesLen(c byte) (int, error) {
+func (d *Decoder) bytesLen(c codes.Code) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	} else if codes.IsFixedString(c) {
@@ -25,18 +24,18 @@ func (d *Decoder) bytesLen(c byte) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding bytes length", c)
+	return 0, fmt.Errorf("msgpack: invalid code=%x decoding bytes length", c)
 }
 
 func (d *Decoder) DecodeString() (string, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readCode()
 	if err != nil {
 		return "", err
 	}
 	return d.string(c)
 }
 
-func (d *Decoder) string(c byte) (string, error) {
+func (d *Decoder) string(c codes.Code) (string, error) {
 	n, err := d.bytesLen(c)
 	if err != nil {
 		return "", err
@@ -53,12 +52,15 @@ func decodeStringValue(d *Decoder, v reflect.Value) error {
 	if err != nil {
 		return err
 	}
+	if err = mustSet(v); err != nil {
+		return err
+	}
 	v.SetString(s)
 	return nil
 }
 
 func (d *Decoder) DecodeBytesLen() (int, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
@@ -66,14 +68,14 @@ func (d *Decoder) DecodeBytesLen() (int, error) {
 }
 
 func (d *Decoder) DecodeBytes() ([]byte, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readCode()
 	if err != nil {
 		return nil, err
 	}
 	return d.bytes(c, nil)
 }
 
-func (d *Decoder) bytes(c byte, b []byte) ([]byte, error) {
+func (d *Decoder) bytes(c codes.Code, b []byte) ([]byte, error) {
 	n, err := d.bytesLen(c)
 	if err != nil {
 		return nil, err
@@ -85,7 +87,7 @@ func (d *Decoder) bytes(c byte, b []byte) ([]byte, error) {
 }
 
 func (d *Decoder) bytesNoCopy() ([]byte, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readCode()
 	if err != nil {
 		return nil, err
 	}
@@ -100,14 +102,14 @@ func (d *Decoder) bytesNoCopy() ([]byte, error) {
 }
 
 func (d *Decoder) decodeBytesPtr(ptr *[]byte) error {
-	c, err := d.r.ReadByte()
+	c, err := d.readCode()
 	if err != nil {
 		return err
 	}
 	return d.bytesPtr(c, ptr)
 }
 
-func (d *Decoder) bytesPtr(c byte, ptr *[]byte) error {
+func (d *Decoder) bytesPtr(c codes.Code, ptr *[]byte) error {
 	n, err := d.bytesLen(c)
 	if err != nil {
 		return err
@@ -121,7 +123,7 @@ func (d *Decoder) bytesPtr(c byte, ptr *[]byte) error {
 	return err
 }
 
-func (d *Decoder) skipBytes(c byte) error {
+func (d *Decoder) skipBytes(c codes.Code) error {
 	n, err := d.bytesLen(c)
 	if err != nil {
 		return err
@@ -133,7 +135,7 @@ func (d *Decoder) skipBytes(c byte) error {
 }
 
 func decodeBytesValue(d *Decoder, v reflect.Value) error {
-	c, err := d.r.ReadByte()
+	c, err := d.readCode()
 	if err != nil {
 		return err
 	}
@@ -142,13 +144,17 @@ func decodeBytesValue(d *Decoder, v reflect.Value) error {
 	if err != nil {
 		return err
 	}
+
+	if err = mustSet(v); err != nil {
+		return err
+	}
 	v.SetBytes(b)
 
 	return nil
 }
 
 func decodeByteArrayValue(d *Decoder, v reflect.Value) error {
-	c, err := d.r.ReadByte()
+	c, err := d.readCode()
 	if err != nil {
 		return err
 	}
@@ -165,6 +171,5 @@ func decodeByteArrayValue(d *Decoder, v reflect.Value) error {
 	}
 
 	b := v.Slice(0, n).Bytes()
-	_, err = io.ReadFull(d.r, b)
-	return err
+	return d.readFull(b)
 }

@@ -4,25 +4,23 @@ import (
 	"fmt"
 	"reflect"
 
-	"gopkg.in/vmihailenco/msgpack.v2/codes"
+	"github.com/vmihailenco/msgpack/codes"
 )
+
+const sliceElemsAllocLimit = 1e4
 
 var sliceStringPtrType = reflect.TypeOf((*[]string)(nil))
 
-// Deprecated. Use DecodeArrayLen instead.
-func (d *Decoder) DecodeSliceLen() (int, error) {
-	return d.DecodeArrayLen()
-}
-
+// DecodeArrayLen decodes array length. Length is -1 when array is nil.
 func (d *Decoder) DecodeArrayLen() (int, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readCode()
 	if err != nil {
 		return 0, err
 	}
-	return d.sliceLen(c)
+	return d.arrayLen(c)
 }
 
-func (d *Decoder) sliceLen(c byte) (int, error) {
+func (d *Decoder) arrayLen(c codes.Code) (int, error) {
 	if c == codes.Nil {
 		return -1, nil
 	} else if c >= codes.FixedArrayLow && c <= codes.FixedArrayHigh {
@@ -36,7 +34,7 @@ func (d *Decoder) sliceLen(c byte) (int, error) {
 		n, err := d.uint32()
 		return int(n), err
 	}
-	return 0, fmt.Errorf("msgpack: invalid code %x decoding array length", c)
+	return 0, fmt.Errorf("msgpack: invalid code=%x decoding array length", c)
 }
 
 func decodeStringSliceValue(d *Decoder, v reflect.Value) error {
@@ -45,7 +43,7 @@ func decodeStringSliceValue(d *Decoder, v reflect.Value) error {
 }
 
 func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
-	n, err := d.DecodeSliceLen()
+	n, err := d.DecodeArrayLen()
 	if err != nil {
 		return err
 	}
@@ -67,8 +65,8 @@ func (d *Decoder) decodeStringSlicePtr(ptr *[]string) error {
 }
 
 func setStringsCap(s []string, n int) []string {
-	if n > sliceAllocLimit {
-		n = sliceAllocLimit
+	if n > sliceElemsAllocLimit {
+		n = sliceElemsAllocLimit
 	}
 
 	if s == nil {
@@ -85,7 +83,7 @@ func setStringsCap(s []string, n int) []string {
 }
 
 func decodeSliceValue(d *Decoder, v reflect.Value) error {
-	n, err := d.DecodeSliceLen()
+	n, err := d.DecodeArrayLen()
 	if err != nil {
 		return err
 	}
@@ -120,15 +118,15 @@ func decodeSliceValue(d *Decoder, v reflect.Value) error {
 
 func growSliceValue(v reflect.Value, n int) reflect.Value {
 	diff := n - v.Len()
-	if diff > sliceAllocLimit {
-		diff = sliceAllocLimit
+	if diff > sliceElemsAllocLimit {
+		diff = sliceElemsAllocLimit
 	}
 	v = reflect.AppendSlice(v, reflect.MakeSlice(v.Type(), diff, diff))
 	return v
 }
 
 func decodeArrayValue(d *Decoder, v reflect.Value) error {
-	n, err := d.DecodeSliceLen()
+	n, err := d.DecodeArrayLen()
 	if err != nil {
 		return err
 	}
@@ -151,15 +149,15 @@ func decodeArrayValue(d *Decoder, v reflect.Value) error {
 }
 
 func (d *Decoder) DecodeSlice() ([]interface{}, error) {
-	c, err := d.r.ReadByte()
+	c, err := d.readCode()
 	if err != nil {
 		return nil, err
 	}
 	return d.decodeSlice(c)
 }
 
-func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
-	n, err := d.sliceLen(c)
+func (d *Decoder) decodeSlice(c codes.Code) ([]interface{}, error) {
+	n, err := d.arrayLen(c)
 	if err != nil {
 		return nil, err
 	}
@@ -167,9 +165,9 @@ func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
 		return nil, nil
 	}
 
-	s := make([]interface{}, 0, min(n, sliceAllocLimit))
+	s := make([]interface{}, 0, min(n, sliceElemsAllocLimit))
 	for i := 0; i < n; i++ {
-		v, err := d.DecodeInterface()
+		v, err := d.decodeInterfaceCond()
 		if err != nil {
 			return nil, err
 		}
@@ -179,8 +177,8 @@ func (d *Decoder) decodeSlice(c byte) ([]interface{}, error) {
 	return s, nil
 }
 
-func (d *Decoder) skipSlice(c byte) error {
-	n, err := d.sliceLen(c)
+func (d *Decoder) skipSlice(c codes.Code) error {
+	n, err := d.arrayLen(c)
 	if err != nil {
 		return err
 	}

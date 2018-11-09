@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/oschwald/maxminddb-golang"
-	"gopkg.in/vmihailenco/msgpack.v2"
+	"gopkg.in/vmihailenco/msgpack.v4"
 
 	"github.com/TykTechnologies/tyk/config"
 	"github.com/TykTechnologies/tyk/regexp"

@@ -1,11 +1,9 @@
-package msgpack // import "gopkg.in/vmihailenco/msgpack.v2"
+package msgpack
 
-// Deprecated. Use CustomEncoder.
 type Marshaler interface {
 	MarshalMsgpack() ([]byte, error)
 }
 
-// Deprecated. Use CustomDecoder.
 type Unmarshaler interface {
 	UnmarshalMsgpack([]byte) error
 }

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"sort"
 
-	"gopkg.in/vmihailenco/msgpack.v2/codes"
+	"github.com/vmihailenco/msgpack/codes"
 )
 
 func encodeMapValue(e *Encoder, v reflect.Value) error {
@@ -122,16 +122,25 @@ func (e *Encoder) encodeSortedMapStringInterface(m map[string]interface{}) error
 
 func (e *Encoder) EncodeMapLen(l int) error {
 	if l < 16 {
-		return e.w.WriteByte(codes.FixedMapLow | byte(l))
+		return e.writeCode(codes.FixedMapLow | codes.Code(l))
 	}
 	if l < 65536 {
-		return e.write2(codes.Map16, uint64(l))
+		return e.write2(codes.Map16, uint16(l))
 	}
-	return e.write4(codes.Map32, uint64(l))
+	return e.write4(codes.Map32, uint32(l))
 }
 
 func encodeStructValue(e *Encoder, strct reflect.Value) error {
-	structFields := structs.Fields(strct.Type())
+	var structFields *fields
+	if e.useJSONTag {
+		structFields = jsonStructs.Fields(strct.Type())
+	} else {
+		structFields = structs.Fields(strct.Type())
+	}
+
+	if e.structAsArray || structFields.AsArray {
+		return encodeStructValueAsArray(e, strct, structFields.List)
+	}
 	fields := structFields.OmitEmpty(strct)
 
 	if err := e.EncodeMapLen(len(fields)); err != nil {
@@ -147,5 +156,17 @@ func encodeStructValue(e *Encoder, strct reflect.Value) error {
 		}
 	}
 
+	return nil
+}
+
+func encodeStructValueAsArray(e *Encoder, strct reflect.Value, fields []*field) error {
+	if err := e.EncodeArrayLen(len(fields)); err != nil {
+		return err
+	}
+	for _, f := range fields {
+		if err := f.EncodeValue(e, strct); err != nil {
+			return err
+		}
+	}
 	return nil
 }

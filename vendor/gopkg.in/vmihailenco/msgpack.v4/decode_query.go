@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/vmihailenco/msgpack.v2/codes"
+	"github.com/vmihailenco/msgpack/codes"
 )
 
 type queryResult struct {
@@ -43,7 +43,7 @@ func (d *Decoder) Query(query string) ([]interface{}, error) {
 func (d *Decoder) query(q *queryResult) error {
 	q.nextKey()
 	if q.key == "" {
-		v, err := d.DecodeInterface()
+		v, err := d.decodeInterfaceCond()
 		if err != nil {
 			return err
 		}
@@ -101,7 +101,7 @@ func (d *Decoder) queryMapKey(q *queryResult) error {
 }
 
 func (d *Decoder) queryArrayIndex(q *queryResult) error {
-	n, err := d.DecodeSliceLen()
+	n, err := d.DecodeArrayLen()
 	if err != nil {
 		return err
 	}

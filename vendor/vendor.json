@@ -1056,16 +1056,16 @@
 			"revisionTime": "2016-09-23T00:08:11Z"
 		},
 		{
-			"checksumSHA1": "auzS48O3vpr/7Yr2GEZZPQKjfhU=",
-			"path": "gopkg.in/vmihailenco/msgpack.v2",
-			"revision": "200315d5c8aab339f5a5cd44219f4b50ad0782df",
-			"revisionTime": "2016-11-14T09:30:20Z"
+			"checksumSHA1": "svhq5VszKSUESgV2kHaJIuYV+d0=",
+			"path": "gopkg.in/vmihailenco/msgpack.v4",
+			"revision": "c4fc0fcdd500af473157759b6d73f935e727ec77",
+			"revisionTime": "2018-10-23T08:46:59Z"
 		},
 		{
-			"checksumSHA1": "KqVHe5SB85yaDcseNq2CogozjRk=",
-			"path": "gopkg.in/vmihailenco/msgpack.v2/codes",
-			"revision": "200315d5c8aab339f5a5cd44219f4b50ad0782df",
-			"revisionTime": "2016-11-14T09:30:20Z"
+			"checksumSHA1": "3FlX07eNeqoT5K4hZAcfwIQ9QN4=",
+			"path": "gopkg.in/vmihailenco/msgpack.v4/codes",
+			"revision": "c4fc0fcdd500af473157759b6d73f935e727ec77",
+			"revisionTime": "2018-10-23T08:46:59Z"
 		},
 		{
 			"checksumSHA1": "gY2M/3SCxqgrPz+P/N6JQ+m/wnA=",

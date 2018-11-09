@@ -1,8 +1,8 @@
 package msgpack
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"reflect"
 )
 
@@ -41,24 +41,37 @@ func init() {
 	}
 }
 
+func mustSet(v reflect.Value) error {
+	if !v.CanSet() {
+		return fmt.Errorf("msgpack: Decode(nonsettable %s)", v.Type())
+	}
+	return nil
+}
+
 func getDecoder(typ reflect.Type) decoderFunc {
 	kind := typ.Kind()
+
+	decoder, ok := typDecMap[typ]
+	if ok {
+		return decoder
+	}
 
 	if typ.Implements(customDecoderType) {
 		return decodeCustomValue
 	}
-
-	// Addressable struct field value.
-	if kind != reflect.Ptr && reflect.PtrTo(typ).Implements(customDecoderType) {
-		return decodeCustomValuePtr
-	}
-
 	if typ.Implements(unmarshalerType) {
 		return unmarshalValue
 	}
 
-	if decoder, ok := typDecMap[typ]; ok {
-		return decoder
+	// Addressable struct field value.
+	if kind != reflect.Ptr {
+		ptr := reflect.PtrTo(typ)
+		if ptr.Implements(customDecoderType) {
+			return decodeCustomValueAddr
+		}
+		if ptr.Implements(unmarshalerType) {
+			return unmarshalValueAddr
+		}
 	}
 
 	switch kind {
@@ -94,13 +107,18 @@ func getDecoder(typ reflect.Type) decoderFunc {
 func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 	decoder := getDecoder(typ.Elem())
 	return func(d *Decoder, v reflect.Value) error {
-		if d.gotNilCode() {
-			v.Set(reflect.Zero(v.Type()))
+		if d.hasNilCode() {
+			if err := mustSet(v); err != nil {
+				return err
+			}
+			if !v.IsNil() {
+				v.Set(reflect.Zero(v.Type()))
+			}
 			return d.DecodeNil()
 		}
 		if v.IsNil() {
-			if !v.CanSet() {
-				return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+			if err := mustSet(v); err != nil {
+				return err
 			}
 			v.Set(reflect.New(v.Type().Elem()))
 		}
@@ -108,46 +126,70 @@ func ptrDecoderFunc(typ reflect.Type) decoderFunc {
 	}
 }
 
-func decodeCustomValuePtr(d *Decoder, v reflect.Value) error {
+func decodeCustomValueAddr(d *Decoder, v reflect.Value) error {
 	if !v.CanAddr() {
-		return fmt.Errorf("msgpack: Decode(nonsettable %T)", v.Interface())
+		return fmt.Errorf("msgpack: Decode(nonaddressable %T)", v.Interface())
 	}
-	if d.gotNilCode() {
-		return d.DecodeNil()
-	}
-	decoder := v.Addr().Interface().(CustomDecoder)
-	return decoder.DecodeMsgpack(d)
+	return decodeCustomValue(d, v.Addr())
 }
 
 func decodeCustomValue(d *Decoder, v reflect.Value) error {
-	if d.gotNilCode() {
-		return d.DecodeNil()
+	if d.hasNilCode() {
+		return d.decodeNilValue(v)
 	}
+
 	if v.IsNil() {
 		v.Set(reflect.New(v.Type().Elem()))
 	}
+
 	decoder := v.Interface().(CustomDecoder)
 	return decoder.DecodeMsgpack(d)
 }
 
+func unmarshalValueAddr(d *Decoder, v reflect.Value) error {
+	if !v.CanAddr() {
+		return fmt.Errorf("msgpack: Decode(nonaddressable %T)", v.Interface())
+	}
+	return unmarshalValue(d, v.Addr())
+}
+
 func unmarshalValue(d *Decoder, v reflect.Value) error {
+	if d.hasNilCode() {
+		return d.decodeNilValue(v)
+	}
+
 	if v.IsNil() {
 		v.Set(reflect.New(v.Type().Elem()))
 	}
-	b, err := ioutil.ReadAll(d.r)
-	if err != nil {
-		return err
+
+	if d.extLen != 0 {
+		b, err := d.readN(d.extLen)
+		if err != nil {
+			return err
+		}
+		d.rec = b
+	} else {
+		d.rec = makeBuffer()
+		if err := d.Skip(); err != nil {
+			return err
+		}
 	}
+
 	unmarshaler := v.Interface().(Unmarshaler)
-	return unmarshaler.UnmarshalMsgpack(b)
+	err := unmarshaler.UnmarshalMsgpack(d.rec)
+	d.rec = nil
+	return err
 }
 
 func decodeBoolValue(d *Decoder, v reflect.Value) error {
-	r, err := d.DecodeBool()
+	flag, err := d.DecodeBool()
 	if err != nil {
 		return err
 	}
-	v.SetBool(r)
+	if err = mustSet(v); err != nil {
+		return err
+	}
+	v.SetBool(flag)
 	return nil
 }
 
@@ -155,7 +197,36 @@ func decodeInterfaceValue(d *Decoder, v reflect.Value) error {
 	if v.IsNil() {
 		return d.interfaceValue(v)
 	}
-	return d.DecodeValue(v.Elem())
+
+	elem := v.Elem()
+	if !elem.CanAddr() {
+		if d.hasNilCode() {
+			v.Set(reflect.Zero(v.Type()))
+			return d.DecodeNil()
+		}
+	}
+
+	return d.DecodeValue(elem)
+}
+
+func (d *Decoder) interfaceValue(v reflect.Value) error {
+	vv, err := d.decodeInterfaceCond()
+	if err != nil {
+		return err
+	}
+
+	if vv != nil {
+		if v.Type() == errorType {
+			if vv, ok := vv.(string); ok {
+				v.Set(reflect.ValueOf(errors.New(vv)))
+				return nil
+			}
+		}
+
+		v.Set(reflect.ValueOf(vv))
+	}
+
+	return nil
 }
 
 func decodeUnsupportedValue(d *Decoder, v reflect.Value) error {
