@@ -190,8 +190,10 @@ func (a APIDefinitionLoader) MakeSpec(def *apidef.APIDefinition, logger *logrus.
 		if ver.Expires == "" || ver.Expires == "-1" {
 			continue
 		}
+		date := strings.Split(ver.Expires, "/")
+		formatted := date[2] + "-" + date[0] + "-" + date[1] + " 00:00"
 		// calculate the time
-		if t, err := time.Parse(expiredTimeFormat, ver.Expires); err != nil {
+		if t, err := time.Parse(expiredTimeFormat, formatted); err != nil {
 			logger.WithError(err).WithField("Expires", ver.Expires).Error("Could not parse expiry date for API")
 		} else {
 			ver.ExpiresTs = t
