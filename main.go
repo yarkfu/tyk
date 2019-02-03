@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dencoded/gopherpack"
 	newrelic "github.com/newrelic/go-agent"
 
 	"github.com/TykTechnologies/tyk/checkup"
@@ -37,7 +38,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"rsc.io/letsencrypt"
 
-	"github.com/TykTechnologies/goagain"
 	"github.com/TykTechnologies/gorpc"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/TykTechnologies/tyk/certs"
@@ -918,6 +918,12 @@ func main() {
 		os.Exit(0)
 	}
 
+	// check if we are in main process
+	if gopherpack.IsMainProcess() {
+		mainLog.Fatal(gopherpack.StartMainProcess())
+	}
+
+	// HERE GOES TYK WORKER LOGIC
 	NodeID = "solo-" + uuid.NewV4().String()
 
 	if err := initialiseSystem(); err != nil {
@@ -925,30 +931,6 @@ func main() {
 	}
 
 	var controlListener net.Listener
-
-	onFork := func() {
-		mainLog.Warning("PREPARING TO FORK")
-
-		if controlListener != nil {
-			if err := controlListener.Close(); err != nil {
-				mainLog.Error("Control listen handler exit: ", err)
-			}
-			mainLog.Info("Control listen closed")
-		}
-
-		if config.Global().UseDBAppConfigs {
-			mainLog.Info("Stopping heartbeat")
-			DashService.StopBeating()
-			mainLog.Info("Waiting to de-register")
-			time.Sleep(10 * time.Second)
-
-			os.Setenv("TYK_SERVICE_NONCE", ServiceNonce)
-			os.Setenv("TYK_SERVICE_NODEID", NodeID)
-		}
-	}
-
-	listener, goAgainErr := goagain.Listener(onFork)
-
 	if controlAPIPort := config.Global().ControlAPIPort; controlAPIPort > 0 {
 		var err error
 		if controlListener, err = generateListener(controlAPIPort); err != nil {
@@ -996,62 +978,67 @@ func main() {
 		runtime.SetMutexProfileFraction(1)
 	}
 
-	if goAgainErr != nil {
-		var err error
-		if listener, err = generateListener(config.Global().ListenPort); err != nil {
-			mainLog.Fatalf("Error starting listener: %s", err)
+	// do things we need before shutting down server
+	gopherpack.OnServerShutdown = func() {
+		mainLog.Info("Stop signal received.")
+
+		if controlListener != nil {
+			if err := controlListener.Close(); err != nil {
+				mainLog.Error("Control listen handler exit: ", err)
+			}
+			mainLog.Info("Control listen closed")
 		}
 
-		listen(listener, controlListener, goAgainErr)
-	} else {
-		listen(listener, controlListener, nil)
+		if config.Global().UseDBAppConfigs {
+			mainLog.Info("Stopping heartbeat")
+			DashService.StopBeating()
+			mainLog.Info("Waiting to de-register")
+			time.Sleep(10 * time.Second)
+			DashService.DeRegister()
 
-		// Kill the parent, now that the child has started successfully.
-		mainLog.Debug("KILLING PARENT PROCESS")
-		if err := goagain.Kill(); err != nil {
-			mainLog.Fatalln(err)
-		}
-	}
-
-	// Block the main goroutine awaiting signals.
-	if _, err := goagain.Wait(listener); err != nil {
-		mainLog.Fatalln(err)
-	}
-
-	// Do whatever's necessary to ensure a graceful exit
-	// In this case, we'll simply stop listening and wait one second.
-	if err := listener.Close(); err != nil {
-		mainLog.Error("Listen handler exit: ", err)
-	}
-
-	mainLog.Info("Stop signal received.")
-
-	// stop analytics workers
-	if config.Global().EnableAnalytics && analytics.Store == nil {
-		analytics.Stop()
-	}
-
-	// if using async session writes stop workers
-	if config.Global().UseAsyncSessionWrite {
-		DefaultOrgStore.Stop()
-		for i := range apiSpecs {
-			apiSpecs[i].StopSessionManagerPool()
+			os.Setenv("TYK_SERVICE_NONCE", ServiceNonce)
+			os.Setenv("TYK_SERVICE_NODEID", NodeID)
 		}
 
+		// stop analytics workers
+		if config.Global().EnableAnalytics && analytics.Store == nil {
+			analytics.Stop()
+		}
+
+		// if using async session writes stop workers
+		if config.Global().UseAsyncSessionWrite {
+			DefaultOrgStore.Stop()
+			for i := range apiSpecs {
+				apiSpecs[i].StopSessionManagerPool()
+			}
+
+		}
+
+		// write pprof profiles
+		writeProfiles()
 	}
 
-	// write pprof profiles
-	writeProfiles()
+	// start tyk gateway
+	server := getServer()
 
-	if config.Global().UseDBAppConfigs {
-		mainLog.Info("Stopping heartbeat...")
-		DashService.StopBeating()
-		time.Sleep(2 * time.Second)
-		DashService.DeRegister()
+	// start control listener if needed
+	if controlListener != nil {
+		cs := &http.Server{
+			ReadTimeout:  server.ReadTimeout,
+			WriteTimeout: server.WriteTimeout,
+			Handler:      controlRouter,
+		}
+		go cs.Serve(controlListener)
 	}
 
-	mainLog.Info("Terminating.")
+	// start tyk server
+	server.TLSConfig = getTLSConfig(config.Global().ListenPort)
+	address := config.Global().ListenAddress + ":" + strconv.Itoa(config.Global().ListenPort)
 
+	// here we block and listen
+	err := gopherpack.ListenAndServeHttp("tcp", address, server)
+
+	mainLog.WithError(err).Info("Terminating")
 	time.Sleep(time.Second)
 }
 
@@ -1115,11 +1102,11 @@ func start() {
 	go reloadQueueLoop()
 }
 
-func generateListener(listenPort int) (net.Listener, error) {
-	listenAddress := config.Global().ListenAddress
+func getAddress() string {
+	return config.Global().ListenAddress + ":" + strconv.Itoa(config.Global().ListenPort)
+}
 
-	targetPort := listenAddress + ":" + strconv.Itoa(listenPort)
-
+func getTLSConfig(listenPort int) *tls.Config {
 	if httpServerOptions := config.Global().HttpServerOptions; httpServerOptions.UseSSL {
 		mainLog.Info("--> Using SSL (https)")
 
@@ -1133,8 +1120,7 @@ func generateListener(listenPort int) (net.Listener, error) {
 		}
 
 		tlsConfig.GetConfigForClient = getTLSConfigForClient(&tlsConfig, listenPort)
-
-		return tls.Listen("tcp", targetPort, &tlsConfig)
+		return &tlsConfig
 	} else if config.Global().HttpServerOptions.UseLE_SSL {
 
 		mainLog.Info("--> Using SSL LE (https)")
@@ -1146,7 +1132,20 @@ func generateListener(listenPort int) (net.Listener, error) {
 		}
 		conf.GetConfigForClient = getTLSConfigForClient(&conf, listenPort)
 
-		return tls.Listen("tcp", targetPort, &conf)
+		return &conf
+	}
+
+	return nil
+}
+
+func generateListener(listenPort int) (net.Listener, error) {
+	listenAddress := config.Global().ListenAddress
+
+	targetPort := listenAddress + ":" + strconv.Itoa(listenPort)
+
+	tlsConfig := getTLSConfig(listenPort)
+	if tlsConfig != nil {
+		return tls.Listen("tcp", targetPort, tlsConfig)
 	} else {
 		mainLog.WithField("port", targetPort).Info("--> Standard listener (http)")
 		return net.Listen("tcp", targetPort)
@@ -1203,6 +1202,57 @@ func (_ mainHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	nopCloseRequestBody(r)
 
 	mainRouter.ServeHTTP(w, r)
+}
+
+func getServer() *http.Server {
+	readTimeout := defReadTimeout
+	writeTimeout := defWriteTimeout
+
+	if config.Global().HttpServerOptions.ReadTimeout > 0 {
+		readTimeout = time.Duration(config.Global().HttpServerOptions.ReadTimeout) * time.Second
+	}
+
+	if config.Global().HttpServerOptions.WriteTimeout > 0 {
+		writeTimeout = time.Duration(config.Global().HttpServerOptions.WriteTimeout) * time.Second
+	}
+
+	if config.Global().ControlAPIPort > 0 {
+		loadAPIEndpoints(controlRouter)
+	}
+
+	mainLog.Info("Setting up Server")
+
+	// handle dashboard registration and nonces if available
+	handleDashboardRegistration()
+
+	var s *http.Server
+	// Use a custom server so we can control tves
+	if config.Global().HttpServerOptions.OverrideDefaults {
+		mainRouter.SkipClean(config.Global().HttpServerOptions.SkipURLCleaning)
+
+		mainLog.Infof("Custom gateway started (%s)", VERSION)
+
+		mainLog.Warning("HTTP Server Overrides detected, this could destabilise long-running http-requests")
+
+		s = &http.Server{
+			ReadTimeout:  readTimeout,
+			WriteTimeout: writeTimeout,
+			Handler:      mainHandler{},
+		}
+
+		if config.Global().CloseConnections {
+			s.SetKeepAlivesEnabled(false)
+		}
+	} else {
+		mainLog.Printf("Gateway started (%s)", VERSION)
+
+		s = &http.Server{Handler: mainHandler{}}
+		if config.Global().CloseConnections {
+			s.SetKeepAlivesEnabled(false)
+		}
+	}
+
+	return s
 }
 
 func listen(listener, controlListener net.Listener, err error) {
