@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type TestCase struct {
@@ -39,6 +41,16 @@ type TestCase struct {
 
 	AdminAuth      bool `json:",omitempty"`
 	ControlRequest bool `json:",omitempty"`
+}
+
+func TestCaseTemplate(tmpl func(*TestCase)) func(tc []TestCase) []TestCase {
+	return func(tc []TestCase) []TestCase {
+		for ci, c := range tc {
+			tmpl(&c)
+			tc[ci] = c
+		}
+		return tc
+	}
 }
 
 func AssertResponse(resp *http.Response, tc *TestCase) error {
@@ -277,15 +289,24 @@ func (r HTTPTestRunner) Run(t testing.TB, testCases ...TestCase) (*http.Response
 	return lastResponse, lastError
 }
 
-func HttpHandlerRunner(handler http.HandlerFunc) func(*http.Request, *TestCase) (*http.Response, error) {
+func HttpHandlerRunner(handler interface{}) func(*http.Request, *TestCase) (*http.Response, error) {
 	return func(r *http.Request, _ *TestCase) (*http.Response, error) {
 		rec := httptest.NewRecorder()
-		handler(rec, r)
+		switch h := handler.(type) {
+		case http.Handler:
+			h.ServeHTTP(rec, r)
+		case http.HandlerFunc:
+			h(rec, r)
+		case func(http.ResponseWriter, *http.Request):
+			h(rec, r)
+		default:
+			panic(h)
+		}
 		return rec.Result(), nil
 	}
 }
 
-func TestHttpHandler(t testing.TB, handle http.HandlerFunc, testCases ...TestCase) {
+func TestHttpHandler(t testing.TB, handle interface{}, testCases ...TestCase) {
 	runner := HTTPTestRunner{
 		Do: HttpHandlerRunner(handle),
 	}
