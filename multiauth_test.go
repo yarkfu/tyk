@@ -71,7 +71,7 @@ func createMultiBasicAuthSession(isBench bool) *user.SessionState {
 
 func getMultiAuthStandardAndBasicAuthChain(spec *APISpec) http.Handler {
 	remote, _ := url.Parse(testHttpAny)
-	proxy := TykNewSingleHostReverseProxy(remote, spec)
+	proxy := TykNewSingleHostReverseProxy(remote, spec, nil)
 	proxyHandler := ProxyHandler(proxy, spec)
 	baseMid := BaseMiddleware{Spec: spec, Proxy: proxy}
 	chain := alice.New(mwList(

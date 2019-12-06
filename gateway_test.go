@@ -1157,7 +1157,6 @@ func TestCacheEtag(t *testing.T) {
 	}...)
 }
 
-
 func TestWebsocketsSeveralOpenClose(t *testing.T) {
 	globalConf := config.Global()
 	globalConf.HttpServerOptions.EnableWebSockets = true

@@ -426,7 +426,7 @@ func (t BaseMiddleware) ApplyPolicies(session *user.SessionState) error {
 	}
 
 	session.Tags = []string{}
-	for tag, _ := range tags {
+	for tag := range tags {
 		session.Tags = append(session.Tags, tag)
 	}
 
