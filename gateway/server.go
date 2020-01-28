@@ -1161,7 +1161,8 @@ func start() {
 
 	// 1s is the minimum amount of time between hot reloads. The
 	// interval counts from the start of one reload to the next.
-	go reloadLoop(time.Tick(time.Second))
+	ticker := time.NewTicker(time.Second)
+	go reloadLoop(ticker.C)
 	go reloadQueueLoop()
 }
 
