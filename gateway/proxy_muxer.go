@@ -381,11 +381,13 @@ func (m *proxyMux) serve() {
 				writeTimeout = time.Duration(config.Global().HttpServerOptions.WriteTimeout) * time.Second
 			}
 
+			// TODO(jlucktay): wire up IdleTimeout properly per read/write above, checking global config
 			addr := config.Global().ListenAddress + ":" + strconv.Itoa(p.port)
 			p.httpServer = &http.Server{
 				Addr:         addr,
 				ReadTimeout:  readTimeout,
 				WriteTimeout: writeTimeout,
+				IdleTimeout:  300 * time.Second,
 				Handler:      &handleWrapper{p.router},
 			}
 

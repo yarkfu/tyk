@@ -195,6 +195,7 @@ func TykNewSingleHostReverseProxy(target *url.URL, spec *APISpec, logger *logrus
 			Handler:        http.HandlerFunc(handler),
 			ReadTimeout:    1 * time.Second,
 			WriteTimeout:   1 * time.Second,
+			IdleTimeout:    60 * time.Second,
 			MaxHeaderBytes: 1 << 20,
 		}
 		allHostsDownURL = "http://" + listener.Addr().String()

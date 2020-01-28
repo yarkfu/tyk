@@ -65,6 +65,7 @@ func InitTestMain(ctx context.Context, m *testing.M, genConf ...func(globalConf 
 		Handler:        testServerRouter,
 		ReadTimeout:    1 * time.Second,
 		WriteTimeout:   1 * time.Second,
+		IdleTimeout:    60 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
