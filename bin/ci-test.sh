@@ -1,67 +1,74 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-TEST_TIMEOUT=5m
+test_timeout=5m
 
-# print a command and execute it
+# Print a command and execute it
 show() {
-	echo "$@" >&2
-	eval "$@"
+  echo "$@" >&2
+  eval "$@"
 }
 
 fatal() {
-	echo "$@" >&2
-	exit 1
+  printf "%s\n" "$@" >&2
+  exit 1
 }
 
-race=""
-if [[ ${LATEST_GO} ]]; then
-    FMT_FILES=$(gofmt -l . | grep -v vendor)
-    if [[ -n $FMT_FILES ]]; then
-        fatal "Run 'gofmt -w' on these files:\n$FMT_FILES"
-    fi
-
-    echo "gofmt check is ok!"
-
-    IMP_FILES="$(goimports -l . | grep -v vendor)"
-    if [[ -n $IMP_FILES ]]; then
-        fatal "Run 'goimports -w' on these files:\n$IMP_FILES"
-    fi
-
-    echo "goimports check is ok!"
-
-    # Run with race if latest
-    race="-race"
+if [ -z "${GOPATH:-}" ]; then
+  fatal "GOPATH is not defined"
 fi
 
-PKGS="$(go list ./...)"
+race=""
+if [[ -n ${LATEST_GO:-} ]]; then
+  fmt_files=$(gofmt -l . | grep -v vendor)
+  if [[ -n $fmt_files ]]; then
+    fatal "Run 'gofmt -w' on these files:\n$fmt_files"
+  fi
+
+  echo "gofmt is OK!"
+
+  imp_files="$(goimports -l . | grep -v vendor)"
+  if [[ -n $imp_files ]]; then
+    fatal "Run 'goimports -w' on these files:\n$imp_files"
+  fi
+
+  echo "goimports is OK!"
+
+  # Run with race if latest
+  race="-race"
+fi
+
+pkgs="$(go list ./...)"
 
 go get -t
 
 export PKG_PATH=$GOPATH/src/github.com/TykTechnologies/tyk
 
 # build Go-plugin used in tests
-go build ${race} -o ./test/goplugins/goplugins.so -buildmode=plugin ./test/goplugins || fatal "building Go-plugin failed"
+go build "$race" -o ./test/goplugins/goplugins.so -buildmode=plugin ./test/goplugins \
+  || fatal "Building goplugins failed"
 
-for pkg in $PKGS; do
-    tags=""
+for pkg in $pkgs; do
+  tags=()
 
-    # TODO: Remove skipRace variable after solving race conditions in tests.
-    skipRace=false
-    if [[ ${pkg} == *"grpc" ]]; then
-        skipRace=true
-    elif [[ ${pkg} == *"goplugin" ]]; then
-        tags="-tags 'goplugin'"
-    fi
+  # TODO: Remove skip_race variable after solving race conditions in tests.
+  skip_race=false
+  if [[ $pkg == *"grpc" ]]; then
+    skip_race=true
+  elif [[ $pkg == *"goplugin" ]]; then
+    tags+=("-tags 'goplugin'")
+  fi
 
-    race=""
+  race=""
 
-    # Some tests should not be run with -race. Therefore, test them with penultimate Go version.
-    # And, test with -race in latest Go version.
-    if [[ ${LATEST_GO} && ${skipRace} = false ]]; then
-        race="-race"
-    fi
+  # Some tests should not be run with -race. Therefore, test them with penultimate Go version.
+  # And, test with -race in latest Go version.
+  if [[ -n $LATEST_GO && $skip_race == false ]]; then
+    race="-race"
+  fi
 
-    show go test -v ${race} -timeout ${TEST_TIMEOUT} -coverprofile=test.cov $pkg ${tags} || fatal "Test Failed"
-    show go vet ${tags} $pkg || fatal "go vet errored"
+  show go test -v "$race" -timeout "$test_timeout" -coverprofile=test.cov "$pkg" "${tags[@]}" \
+    || fatal "go test failed"
+  show go vet "${tags[@]}" "$pkg" \
+    || fatal "go vet errored"
 done
