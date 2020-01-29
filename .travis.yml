@@ -1,5 +1,6 @@
-sudo: required
 language: go
+
+os: linux
 
 notifications:
   on_success: never
@@ -15,13 +16,13 @@ addons:
       - python3-pip
       - libluajit-5.1-dev
 
-matrix:
+jobs:
   include:
     - go: 1.12.x
       env: LATEST_GO=true # run linters and report coverage
 
 services:
-  - redis-server
+  - redis
 
 install:
   - go get
