@@ -183,6 +183,7 @@ func TestResponseOverride(t *testing.T) {
 		}...)
 	}
 	t.Run("Python", func(t *testing.T) {
+		t.Skip("TODO(jlucktay): re-enable this test later")
 		testOverride(t, RegisterBundle("python_override", overrideResponsePython))
 	})
 
