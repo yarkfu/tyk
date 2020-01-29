@@ -64,8 +64,7 @@ func TestURLRewrites(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/rewrite1?show_env=1", Code: http.StatusOK, BodyMatch: `"URI":"/get\?show_env=2"`},
 			{Path: "/rewrite", Code: http.StatusOK, BodyMatch: `"URI":"/get\?just_rewrite"`},
 		}...)
@@ -96,7 +95,7 @@ func TestWhitelist(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			// Should mock path
 			{Path: "/reply/", Code: http.StatusOK, BodyMatch: "flump"},
 			{Path: "/reply/123", Code: http.StatusOK, BodyMatch: "flump"},
@@ -105,7 +104,6 @@ func TestWhitelist(t *testing.T) {
 			// Reject not whitelisted (but know by upstream) path
 			{Method: "POST", Path: "/post", Code: http.StatusForbidden},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Simple Paths", func(t *testing.T) {
@@ -118,14 +116,13 @@ func TestWhitelist(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			// Should mock path
 			{Path: "/simple", Code: http.StatusOK},
 			{Path: "/regex/123/test", Code: http.StatusOK},
 			{Path: "/regex/123/differ", Code: http.StatusForbidden},
 			{Path: "/", Code: http.StatusForbidden},
 		}...)
-		resp.Body.Close()
 	})
 
 	t.Run("Test #1944", func(t *testing.T) {
@@ -138,8 +135,7 @@ func TestWhitelist(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/foo", Code: http.StatusForbidden},
 			{Path: "/foo/", Code: http.StatusOK},
 			{Path: "/foo/1", Code: http.StatusOK},
@@ -165,13 +161,12 @@ func TestWhitelist(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/foo", Code: http.StatusForbidden},
 			{Path: "/Foo", Code: http.StatusOK},
 			{Path: "/bar", Code: http.StatusOK},
 			{Path: "/Bar", Code: http.StatusForbidden},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 
@@ -197,8 +192,7 @@ func TestBlacklist(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/blacklist/literal", Code: http.StatusForbidden},
 			{Path: "/blacklist/123/test", Code: http.StatusForbidden},
 
@@ -218,7 +212,7 @@ func TestBlacklist(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/blacklist/literal", Code: http.StatusForbidden},
 			{Path: "/blacklist/123/test", Code: http.StatusForbidden},
 
@@ -226,7 +220,6 @@ func TestBlacklist(t *testing.T) {
 			// POST method also blacklisted
 			{Method: "POST", Path: "/blacklist/literal", Code: http.StatusForbidden},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Case Sensitivity", func(t *testing.T) {
@@ -239,8 +232,7 @@ func TestBlacklist(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/foo", Code: http.StatusOK},
 			{Path: "/Foo", Code: http.StatusForbidden},
 			{Path: "/bar", Code: http.StatusForbidden},
@@ -270,8 +262,7 @@ func TestConflictingPaths(t *testing.T) {
 		spec.Proxy.ListenPath = "/"
 	})
 
-	//nolint:bodyclose
-	_, _ = ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		// Should ignore auth check
 		{Method: "POST", Path: "/customer-servicing/documents/metadata/purge", Code: http.StatusOK},
 		{Method: "GET", Path: "/customer-servicing/documents/metadata/{id}", Code: http.StatusOK},
@@ -301,7 +292,7 @@ func TestIgnored(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			// Should ignore auth check
 			{Path: "/ignored/literal", Code: http.StatusOK},
 			{Path: "/ignored/123/test", Code: http.StatusOK},
@@ -310,7 +301,6 @@ func TestIgnored(t *testing.T) {
 
 			{Path: "/", Code: 401},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Simple Paths", func(t *testing.T) {
@@ -324,7 +314,7 @@ func TestIgnored(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			// Should ignore auth check
 			{Path: "/ignored/literal", Code: http.StatusOK},
 			{Path: "/ignored/123/test", Code: http.StatusOK},
@@ -333,7 +323,6 @@ func TestIgnored(t *testing.T) {
 
 			{Path: "/", Code: 401},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("With URL rewrite", func(t *testing.T) {
@@ -363,12 +352,11 @@ func TestIgnored(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		_, _ = ts.Run(t, []test.TestCase{
 			// URL rewrite should work with ignore
 			{Path: "/ignored", BodyMatch: `"URI":"/get"`, Code: http.StatusOK},
 			{Path: "/", Code: http.StatusUnauthorized},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Case Sensitivity", func(t *testing.T) {
@@ -382,7 +370,6 @@ func TestIgnored(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		//nolint:bodyclose
 		_, _ = ts.Run(t, []test.TestCase{
 			{Path: "/foo", Code: http.StatusUnauthorized},
 			{Path: "/Foo", Code: http.StatusOK},
@@ -424,13 +411,12 @@ func TestWhitelistMethodWithAdditionalMiddleware(t *testing.T) {
 		})
 
 		//headers := map[string]string{"foo": "bar"}
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			//Should get original upstream response
 			//{Method: "GET", Path: "/get", Code: http.StatusOK, HeadersMatch: headers},
 			//Reject not whitelisted (but know by upstream) path
 			{Method: "POST", Path: "/get", Code: http.StatusForbidden},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 
@@ -553,13 +539,12 @@ func TestDefaultVersion(t *testing.T) {
 
 	authHeaders := map[string]string{"authorization": key}
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Path: "/foo", Headers: authHeaders, Code: http.StatusForbidden},      // Not whitelisted for default v2
 		{Path: "/bar", Headers: authHeaders, Code: http.StatusOK},             // Whitelisted for default v2
 		{Path: "/foo?v=v1", Headers: authHeaders, Code: http.StatusOK},        // Allowed for v1
 		{Path: "/bar?v=v1", Headers: authHeaders, Code: http.StatusForbidden}, // Not allowed for v1
 	}...)
-	defer resp.Body.Close()
 }
 
 func BenchmarkDefaultVersion(b *testing.B) {
@@ -573,13 +558,15 @@ func BenchmarkDefaultVersion(b *testing.B) {
 	authHeaders := map[string]string{"authorization": key}
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, []test.TestCase{
-			{Path: "/foo", Headers: authHeaders, Code: http.StatusForbidden},      // Not whitelisted for default v2
-			{Path: "/bar", Headers: authHeaders, Code: http.StatusOK},             // Whitelisted for default v2
-			{Path: "/foo?v=v1", Headers: authHeaders, Code: http.StatusOK},        // Allowed for v1
-			{Path: "/bar?v=v1", Headers: authHeaders, Code: http.StatusForbidden}, // Not allowed for v1
-		}...)
-		defer resp.Body.Close()
+		ts.Run(
+			b,
+			[]test.TestCase{
+				{Path: "/foo", Headers: authHeaders, Code: http.StatusForbidden},      // Not whitelisted for default v2
+				{Path: "/bar", Headers: authHeaders, Code: http.StatusOK},             // Whitelisted for default v2
+				{Path: "/foo?v=v1", Headers: authHeaders, Code: http.StatusOK},        // Allowed for v1
+				{Path: "/bar?v=v1", Headers: authHeaders, Code: http.StatusForbidden}, // Not allowed for v1
+			}...,
+		)
 	}
 }
 
@@ -630,11 +617,10 @@ func TestGetVersionFromRequest(t *testing.T) {
 
 		headers := map[string]string{"X-API-Version": "v1"}
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/foo", Code: http.StatusOK, Headers: headers},
 			{Path: "/bar", Code: http.StatusForbidden, Headers: headers},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("URL param location", func(t *testing.T) {
@@ -646,11 +632,10 @@ func TestGetVersionFromRequest(t *testing.T) {
 			spec.VersionData.Versions["v2"] = versionInfo
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/foo?version=v2", Code: http.StatusOK},
 			{Path: "/bar?version=v2", Code: http.StatusForbidden},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("URL location", func(t *testing.T) {
@@ -661,11 +646,10 @@ func TestGetVersionFromRequest(t *testing.T) {
 			spec.VersionData.Versions["v3"] = versionInfo
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/v3/foo", Code: http.StatusOK},
 			{Path: "/v3/bar", Code: http.StatusForbidden},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 
@@ -691,11 +675,10 @@ func BenchmarkGetVersionFromRequest(b *testing.B) {
 		headers := map[string]string{"X-API-Version": "v1"}
 
 		for i := 0; i < b.N; i++ {
-			resp, _ := ts.Run(b, []test.TestCase{
+			ts.Run(b, []test.TestCase{
 				{Path: "/foo", Code: http.StatusOK, Headers: headers},
 				{Path: "/bar", Code: http.StatusForbidden, Headers: headers},
 			}...)
-			defer resp.Body.Close()
 		}
 	})
 
@@ -710,11 +693,10 @@ func BenchmarkGetVersionFromRequest(b *testing.B) {
 		})
 
 		for i := 0; i < b.N; i++ {
-			resp, _ := ts.Run(b, []test.TestCase{
+			ts.Run(b, []test.TestCase{
 				{Path: "/foo?version=v2", Code: http.StatusOK},
 				{Path: "/bar?version=v2", Code: http.StatusForbidden},
 			}...)
-			defer resp.Body.Close()
 		}
 	})
 
@@ -728,11 +710,10 @@ func BenchmarkGetVersionFromRequest(b *testing.B) {
 		})
 
 		for i := 0; i < b.N; i++ {
-			resp, _ := ts.Run(b, []test.TestCase{
+			ts.Run(b, []test.TestCase{
 				{Path: "/v3/foo", Code: http.StatusOK},
 				{Path: "/v3/bar", Code: http.StatusForbidden},
 			}...)
-			defer resp.Body.Close()
 		}
 	})
 }

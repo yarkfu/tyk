@@ -244,10 +244,9 @@ func TestBodyTransformCaseSensitivity(t *testing.T) {
 			})
 		})
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: requestedPath, Code: 200, BodyMatch: bodyMatch,
 		})
-		defer resp.Body.Close()
 	}
 
 	// Matches and transforms

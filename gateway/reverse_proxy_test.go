@@ -374,7 +374,7 @@ func TestCircuitBreaker5xxs(t *testing.T) {
 			spec.CircuitBreakerEnabled = true
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/errors/500", Code: http.StatusInternalServerError},
 			{Path: "/errors/501", Code: http.StatusNotImplemented},
 			{Path: "/errors/502", Code: http.StatusBadGateway},
@@ -382,7 +382,6 @@ func TestCircuitBreaker5xxs(t *testing.T) {
 			{Path: "/errors/501", Code: http.StatusServiceUnavailable},
 			{Path: "/errors/502", Code: http.StatusServiceUnavailable},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 

@@ -139,10 +139,9 @@ func TestJWTSessionHMAC(t *testing.T) {
 
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT signed with HMAC", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -158,10 +157,9 @@ func BenchmarkJWTSessionHMAC(b *testing.B) {
 
 	authHeaders := map[string]string{"authorization": jwtToken}
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, test.TestCase{
+		ts.Run(b, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	}
 }
 
@@ -174,10 +172,9 @@ func TestJWTHMACIdInSubClaim(t *testing.T) {
 	_, jwtToken := prepareGenericJWTSession(t.Name(), HMACSign, SUB, true)
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/HMAC/Id in SuB/Global-skip-kid/Api-skip-kid", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	// For backward compatibility, if the new config are not set, and the id is in the 'sub' claim while the 'kid' claim
@@ -185,12 +182,11 @@ func TestJWTHMACIdInSubClaim(t *testing.T) {
 	_, jwtToken = prepareGenericJWTSession(t.Name(), HMACSign, SUB, false)
 	authHeaders = map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/HMAC/Id in SuB/Global-dont-skip-kid/Api-dont-skip-kid", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: `Key not authorized:token invalid, key not found`,
 		})
-		defer resp.Body.Close()
 	})
 
 	// Case where the gw always check the 'kid' claim first but if this JWTSkipCheckKidAsId is set on the api level,
@@ -199,10 +195,9 @@ func TestJWTHMACIdInSubClaim(t *testing.T) {
 	defer ResetTestConfig()
 	authHeaders = map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/HMAC/Id in SuB/Global-dont-skip-kid/Api-skip-kid", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -213,30 +208,27 @@ func TestJWTRSAIdInSubClaim(t *testing.T) {
 	_, jwtToken := prepareGenericJWTSession(t.Name(), RSASign, SUB, true)
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA/Id in SuB/Global-skip-kid/Api-skip-kid", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	_, jwtToken = prepareGenericJWTSession(t.Name(), RSASign, SUB, false)
 	authHeaders = map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA/Id in SuB/Global-dont-skip-kid/Api-dont-skip-kid", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: `Key not authorized:token invalid, key not found`,
 		})
-		defer resp.Body.Close()
 	})
 
 	_, jwtToken = prepareGenericJWTSession(t.Name(), RSASign, SUB, true)
 	authHeaders = map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA/Id in SuB/Global-dont-skip-kid/Api-skip-kid", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -248,10 +240,9 @@ func TestJWTSessionRSA(t *testing.T) {
 	_, jwtToken := prepareGenericJWTSession(t.Name(), RSASign, KID, false)
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -266,10 +257,9 @@ func BenchmarkJWTSessionRSA(b *testing.B) {
 
 	authHeaders := map[string]string{"authorization": jwtToken}
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, test.TestCase{
+		ts.Run(b, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	}
 }
 
@@ -282,10 +272,9 @@ func TestJWTSessionFailRSA_EmptyJWT(t *testing.T) {
 
 	authHeaders := map[string]string{"authorization": ""}
 	t.Run("Request with empty authorization header", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: 400,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -298,10 +287,9 @@ func TestJWTSessionFailRSA_NoAuthHeader(t *testing.T) {
 
 	authHeaders := map[string]string{}
 	t.Run("Request without authorization header", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusBadRequest, BodyMatch: `Authorization field missing`,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -314,12 +302,11 @@ func TestJWTSessionFailRSA_MalformedJWT(t *testing.T) {
 
 	authHeaders := map[string]string{"authorization": jwtToken + "ajhdkjhsdfkjashdkajshdkajhsdkajhsd"}
 	t.Run("Request with malformed JWT", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: `Key not authorized:crypto/rsa: verification error`,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -333,12 +320,11 @@ func TestJWTSessionFailRSA_MalformedJWT_NOTRACK(t *testing.T) {
 	authHeaders := map[string]string{"authorization": jwtToken + "ajhdkjhsdfkjashdkajshdkajhsdkajhsd"}
 
 	t.Run("Request with malformed JWT no track", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: `Key not authorized:crypto/rsa: verification error`,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -351,12 +337,11 @@ func TestJWTSessionFailRSA_WrongJWT(t *testing.T) {
 	authHeaders := map[string]string{"authorization": "123"}
 
 	t.Run("Request with invalid JWT", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: `Key not authorized:token contains an invalid number of segments`,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -369,10 +354,9 @@ func TestJWTSessionRSABearer(t *testing.T) {
 	authHeaders := map[string]string{"authorization": "Bearer " + jwtToken}
 
 	t.Run("Request with valid Bearer", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -387,10 +371,9 @@ func BenchmarkJWTSessionRSABearer(b *testing.B) {
 	authHeaders := map[string]string{"authorization": "Bearer " + jwtToken}
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, test.TestCase{
+		ts.Run(b, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	}
 }
 
@@ -403,12 +386,11 @@ func TestJWTSessionRSABearerInvalid(t *testing.T) {
 	authHeaders := map[string]string{"authorization": "Bearer: " + jwtToken} // extra ":" makes the value invalid
 
 	t.Run("Request with invalid Bearer", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: "Key not authorized:illegal base64 data at input byte 6",
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -421,19 +403,17 @@ func TestJWTSessionRSABearerInvalidTwoBears(t *testing.T) {
 	authHeaders1 := map[string]string{"authorization": "Bearer bearer" + jwtToken}
 
 	t.Run("Request with Bearer bearer", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders1, Code: http.StatusForbidden,
 		})
-		defer resp.Body.Close()
 	})
 
 	authHeaders2 := map[string]string{"authorization": "bearer Bearer" + jwtToken}
 
 	t.Run("Request with bearer Bearer", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders2, Code: http.StatusForbidden,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -492,10 +472,9 @@ func TestJWTSessionRSAWithRawSourceOnWithClientID(t *testing.T) {
 	authHeaders := map[string]string{"authorization": jwtToken}
 
 	t.Run("Initial request with no policy base field in JWT", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -509,10 +488,9 @@ func BenchmarkJWTSessionRSAWithRawSourceOnWithClientID(b *testing.B) {
 	authHeaders := map[string]string{"authorization": jwtToken}
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, test.TestCase{
+		ts.Run(b, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	}
 }
 
@@ -550,10 +528,9 @@ func TestJWTSessionRSAWithRawSource(t *testing.T) {
 
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Initial request with valid policy", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -568,14 +545,13 @@ func BenchmarkJWTSessionRSAWithRawSource(b *testing.B) {
 	authHeaders := map[string]string{"authorization": jwtToken}
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(
+		ts.Run(
 			b,
 			test.TestCase{
 				Headers: authHeaders,
 				Code:    http.StatusOK,
 			},
 		)
-		defer resp.Body.Close()
 	}
 }
 
@@ -607,12 +583,11 @@ func TestJWTSessionRSAWithRawSourceInvalidPolicyID(t *testing.T) {
 
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Initial request with invalid policy", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: "key not authorized: no matching policy",
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -646,10 +621,9 @@ func TestJWTSessionExpiresAtValidationConfigs(t *testing.T) {
 		spec.JWTExpiresAtValidationSkew = 0 //Default value
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(+time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	// This test is successful by definition, so it's true also with skew, but just to avoid confusion.
@@ -657,42 +631,38 @@ func TestJWTSessionExpiresAtValidationConfigs(t *testing.T) {
 		spec.JWTExpiresAtValidationSkew = 1
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(+time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("Expiry_Before_now--Invalid_jwt", func(t *testing.T) {
 		spec.JWTExpiresAtValidationSkew = 0 //Default value
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   jwtAuthHeaderGen(-time.Second),
 			Code:      http.StatusUnauthorized,
 			BodyMatch: "Key not authorized: token has expired",
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("Expired_token-Before_now-Huge_skew--Valid_jwt", func(t *testing.T) {
 		spec.JWTExpiresAtValidationSkew = 1000 // This value doesn't matter since validation is disabled
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(-time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("Expired_token-Before_now-Add_skew--Valid_jwt", func(t *testing.T) {
 		spec.JWTExpiresAtValidationSkew = 2
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(-time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -727,10 +697,9 @@ func TestJWTSessionIssueAtValidationConfigs(t *testing.T) {
 
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(-time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("Expiry_after_now--Invalid_jwt", func(t *testing.T) {
@@ -738,10 +707,9 @@ func TestJWTSessionIssueAtValidationConfigs(t *testing.T) {
 
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(-time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("IssueAt-After_now-no_skew--Invalid_jwt", func(t *testing.T) {
@@ -749,23 +717,21 @@ func TestJWTSessionIssueAtValidationConfigs(t *testing.T) {
 
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   jwtAuthHeaderGen(+time.Minute),
 			Code:      http.StatusUnauthorized,
 			BodyMatch: "Key not authorized: token used before issued",
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("IssueAt--After_now-Huge_skew--valid_jwt", func(t *testing.T) {
 		spec.JWTIssuedAtValidationSkew = 1000 // This value doesn't matter since validation is disabled
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(+time.Second),
 			Code:    http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	// True by definition
@@ -773,10 +739,9 @@ func TestJWTSessionIssueAtValidationConfigs(t *testing.T) {
 		spec.JWTIssuedAtValidationSkew = 2 // 2 seconds
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(-3 * time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("IssueAt-After_now-Add_skew--Valid_jwt", func(t *testing.T) {
@@ -784,10 +749,9 @@ func TestJWTSessionIssueAtValidationConfigs(t *testing.T) {
 
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(+time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -821,10 +785,9 @@ func TestJWTSessionNotBeforeValidationConfigs(t *testing.T) {
 
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(-time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("NotBefore_After_now--Invalid_jwt", func(t *testing.T) {
@@ -832,12 +795,11 @@ func TestJWTSessionNotBeforeValidationConfigs(t *testing.T) {
 
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   jwtAuthHeaderGen(+time.Second),
 			Code:      http.StatusUnauthorized,
 			BodyMatch: "Key not authorized: token is not valid yet",
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("NotBefore_After_now-Add_skew--valid_jwt", func(t *testing.T) {
@@ -845,10 +807,9 @@ func TestJWTSessionNotBeforeValidationConfigs(t *testing.T) {
 
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(+time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("NotBefore_After_now-Huge_skew--valid_jwt", func(t *testing.T) {
@@ -856,10 +817,9 @@ func TestJWTSessionNotBeforeValidationConfigs(t *testing.T) {
 
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: jwtAuthHeaderGen(+time.Second), Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -892,10 +852,9 @@ func TestJWTExistingSessionRSAWithRawSourceInvalidPolicyID(t *testing.T) {
 
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Initial request with valid policy", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	// put in JWT invalid policy ID and do request again
@@ -909,12 +868,11 @@ func TestJWTExistingSessionRSAWithRawSourceInvalidPolicyID(t *testing.T) {
 
 	authHeaders = map[string]string{"authorization": jwtTokenInvalidPolicy}
 	t.Run("Request with invalid policy in JWT", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			BodyMatch: "key not authorized: no matching policy",
 			Code:      http.StatusForbidden,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -1036,41 +994,38 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Create JWT session with base and scopes", func(t *testing.T) {
-		resp, _ := ts.Run(t,
+		ts.Run(t,
 			test.TestCase{
 				Headers: authHeaders,
 				Path:    "/base",
 				Code:    http.StatusOK,
 			})
-		defer resp.Body.Close()
 	})
 
 	authHeaders = map[string]string{"authorization": jwtTokenWithoutBasePol}
 	t.Run("Create JWT session without base and with scopes", func(t *testing.T) {
-		resp, _ := ts.Run(t,
+		ts.Run(t,
 			test.TestCase{
 				Headers: authHeaders,
 				Path:    "/api1",
 				Code:    http.StatusOK,
 			})
-		defer resp.Body.Close()
 	})
 
 	authHeaders = map[string]string{"authorization": jwtTokenWithoutBasePolAndScopes}
 	t.Run("Create JWT session without base and without scopes", func(t *testing.T) {
-		resp, _ := ts.Run(t,
+		ts.Run(t,
 			test.TestCase{
 				Headers: authHeaders,
 				Path:    "/base",
 				Code:    http.StatusOK,
 			})
-		defer resp.Body.Close()
 	})
 
 	// check that key has right set of policies assigned - there should be all three - base one and two from scope
 	sessionID := generateToken("default", fmt.Sprintf("%x", md5.Sum([]byte(userID))))
 	t.Run("Request to check that session has got both based and scope policies", func(t *testing.T) {
-		resp, _ := ts.Run(
+		ts.Run(
 			t,
 			test.TestCase{
 				Method:    http.MethodGet,
@@ -1090,13 +1045,12 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 				},
 			},
 		)
-		defer resp.Body.Close()
 	})
 
 	// check that key has right set of policies assigned - there should be all three - base one and two from scope
 	sessionID = generateToken("default", fmt.Sprintf("%x", md5.Sum([]byte(user2ID))))
 	t.Run("If scopes present no default policy should be used", func(t *testing.T) {
-		resp, _ := ts.Run(
+		ts.Run(
 			t,
 			test.TestCase{
 				Method:    http.MethodGet,
@@ -1113,13 +1067,12 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 				},
 			},
 		)
-		defer resp.Body.Close()
 	})
 
 	// check that key has right set of policies assigned - there should be all three - base one and two from scope
 	sessionID = generateToken("default", fmt.Sprintf("%x", md5.Sum([]byte(user3ID))))
 	t.Run("Default policy should be applied if no scopes found", func(t *testing.T) {
-		resp, _ := ts.Run(
+		ts.Run(
 			t,
 			test.TestCase{
 				Method:    http.MethodGet,
@@ -1136,14 +1089,13 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 				},
 			},
 		)
-		defer resp.Body.Close()
 	})
 
 	authHeaders = map[string]string{"authorization": jwtToken}
 	sessionID = generateToken("default", fmt.Sprintf("%x", md5.Sum([]byte(userID))))
 	// try to access api1 using JWT issued via base-api
 	t.Run("Request to api1", func(t *testing.T) {
-		resp, _ := ts.Run(
+		ts.Run(
 			t,
 			test.TestCase{
 				Headers: authHeaders,
@@ -1152,12 +1104,11 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 				Code:    http.StatusOK,
 			},
 		)
-		defer resp.Body.Close()
 	})
 
 	// try to access api2 using JWT issued via base-api
 	t.Run("Request to api2", func(t *testing.T) {
-		resp, _ := ts.Run(
+		ts.Run(
 			t,
 			test.TestCase{
 				Headers: authHeaders,
@@ -1166,12 +1117,11 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 				Code:    http.StatusOK,
 			},
 		)
-		defer resp.Body.Close()
 	})
 
 	// try to access api3 (which is not granted via base policy nor scope-policy mapping) using JWT issued via base-api
 	t.Run("Request to api3", func(t *testing.T) {
-		resp, _ := ts.Run(
+		ts.Run(
 			t,
 			test.TestCase{
 				Headers: authHeaders,
@@ -1180,7 +1130,6 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 				Code:    http.StatusForbidden,
 			},
 		)
-		defer resp.Body.Close()
 	})
 
 	// try to change scope to policy mapping and request using existing session
@@ -1207,18 +1156,17 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 	LoadAPI(base)
 
 	t.Run("Request with changed scope in JWT and key with existing session", func(t *testing.T) {
-		resp, _ := ts.Run(t,
+		ts.Run(t,
 			test.TestCase{
 				Headers: authHeaders,
 				Path:    "/base",
 				Code:    http.StatusOK,
 			})
-		defer resp.Body.Close()
 	})
 
 	// check that key has right set of policies assigned - there should be updated list (base one and one from scope)
 	t.Run("Request to check that session has got changed apply_policies value", func(t *testing.T) {
-		resp, _ := ts.Run(
+		ts.Run(
 			t,
 			test.TestCase{
 				Method:    http.MethodGet,
@@ -1235,7 +1183,6 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 				},
 			},
 		)
-		defer resp.Body.Close()
 	})
 
 }
@@ -1277,7 +1224,7 @@ func TestJWTExistingSessionRSAWithRawSourcePolicyIDChanged(t *testing.T) {
 
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Initial request with 1st policy", func(t *testing.T) {
-		resp, _ := ts.Run(
+		ts.Run(
 			t,
 			test.TestCase{
 				Headers: authHeaders, Code: http.StatusOK,
@@ -1290,7 +1237,6 @@ func TestJWTExistingSessionRSAWithRawSourcePolicyIDChanged(t *testing.T) {
 				BodyMatch: `"quota_max":111`,
 			},
 		)
-		defer resp.Body.Close()
 	})
 
 	// check key/session quota
@@ -1306,7 +1252,7 @@ func TestJWTExistingSessionRSAWithRawSourcePolicyIDChanged(t *testing.T) {
 
 	authHeaders = map[string]string{"authorization": jwtTokenAnotherPolicy}
 	t.Run("Request with new valid policy in JWT", func(t *testing.T) {
-		resp, _ := ts.Run(t,
+		ts.Run(t,
 			test.TestCase{
 				Headers: authHeaders, Code: http.StatusOK,
 			},
@@ -1318,7 +1264,6 @@ func TestJWTExistingSessionRSAWithRawSourcePolicyIDChanged(t *testing.T) {
 				BodyMatch: `"quota_max":999`,
 			},
 		)
-		defer resp.Body.Close()
 	})
 }
 
@@ -1355,10 +1300,9 @@ func TestJWTSessionRSAWithJWK(t *testing.T) {
 	authHeaders := map[string]string{"authorization": jwtToken}
 
 	t.Run("JWTSessionRSAWithJWK", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -1372,14 +1316,13 @@ func BenchmarkJWTSessionRSAWithJWK(b *testing.B) {
 	authHeaders := map[string]string{"authorization": jwtToken}
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(
+		ts.Run(
 			b,
 			test.TestCase{
 				Headers: authHeaders,
 				Code:    http.StatusOK,
 			},
 		)
-		defer resp.Body.Close()
 	}
 }
 
@@ -1420,20 +1363,18 @@ func TestJWTSessionRSAWithEncodedJWK(t *testing.T) {
 		spec.JWTSource = testHttpJWK
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("Base64 JWK URL", func(t *testing.T) {
 		spec.JWTSource = base64.StdEncoding.EncodeToString([]byte(testHttpJWK))
 		LoadAPI(spec)
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -1451,14 +1392,13 @@ func BenchmarkJWTSessionRSAWithEncodedJWK(b *testing.B) {
 	authHeaders := map[string]string{"authorization": jwtToken}
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(
+		ts.Run(
 			b,
 			test.TestCase{
 				Headers: authHeaders,
 				Code:    http.StatusOK,
 			},
 		)
-		defer resp.Body.Close()
 	}
 }
 
@@ -1471,10 +1411,9 @@ func TestJWTHMACIdNewClaim(t *testing.T) {
 	defer ResetTestConfig()
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/HMAC signature/id in user-id claim", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -1504,10 +1443,9 @@ func TestJWTRSAIdInClaimsWithBaseField(t *testing.T) {
 	})
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA signature/user id in user_id claim", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	//user-id claim configured but it's empty - returning an error
@@ -1520,12 +1458,11 @@ func TestJWTRSAIdInClaimsWithBaseField(t *testing.T) {
 	})
 	authHeaders = map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA signature/empty user_id claim", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: "found an empty user ID in predefined base field claim user_id",
 		})
-		defer resp.Body.Close()
 	})
 
 	//user-id claim configured but not found fallback to sub
@@ -1538,10 +1475,9 @@ func TestJWTRSAIdInClaimsWithBaseField(t *testing.T) {
 	})
 	authHeaders = map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA signature/user id in sub claim", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	//user-id claim not found fallback to sub that is empty
@@ -1554,12 +1490,11 @@ func TestJWTRSAIdInClaimsWithBaseField(t *testing.T) {
 	})
 	authHeaders = map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA signature/empty sub claim", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: "found an empty user ID in sub claim",
 		})
-		defer resp.Body.Close()
 	})
 
 	//user-id and sub claims not found
@@ -1571,12 +1506,11 @@ func TestJWTRSAIdInClaimsWithBaseField(t *testing.T) {
 	})
 	authHeaders = map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA signature/no base field or sub claims", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: "no suitable claims for user ID were found",
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -1605,10 +1539,9 @@ func TestJWTRSAIdInClaimsWithoutBaseField(t *testing.T) {
 	})
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA signature/id found in default sub", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 
 	//Id is not found since there's no sub claim and user_id has't been set in the api def (spec.JWTIdentityBaseField)
@@ -1621,12 +1554,11 @@ func TestJWTRSAIdInClaimsWithoutBaseField(t *testing.T) {
 	})
 	authHeaders = map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA signature/no id claims", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: "no suitable claims for user ID were found",
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -1701,35 +1633,31 @@ func TestJWTDefaultPolicies(t *testing.T) {
 
 		// Default
 		LoadAPI(spec)
-		resp, _ := ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1, defPol2})
 
 		// Same to check stored correctly
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1, defPol2})
 
 		// Remove one of default policies
 		spec.JWTDefaultPolicies = []string{defPol1}
 		LoadAPI(spec)
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1})
 
 		// Add a default policy
 		spec.JWTDefaultPolicies = []string{defPol1, defPol2}
 		LoadAPI(spec)
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1, defPol2})
 	})
 
@@ -1743,35 +1671,31 @@ func TestJWTDefaultPolicies(t *testing.T) {
 
 		// Default
 		LoadAPI(spec)
-		resp, _ := ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1, defPol2})
 
 		// Same to check stored correctly
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1, defPol2})
 
 		// Remove one of default policies
 		spec.JWTDefaultPolicies = []string{defPol1}
 		LoadAPI(spec)
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1})
 
 		// Add a default policy
 		spec.JWTDefaultPolicies = []string{defPol1, defPol2}
 		LoadAPI(spec)
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1, defPol2})
 	})
 
@@ -1786,11 +1710,10 @@ func TestJWTDefaultPolicies(t *testing.T) {
 
 		authHeaders := map[string]string{"authorization": jwtToken}
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		_, _ = ts.Run(t, []test.TestCase{
 			{Headers: authHeaders, Code: http.StatusForbidden},
 			{Headers: authHeaders, Code: http.StatusForbidden},
 		}...)
-		defer resp.Body.Close()
 
 		// Reset
 		spec.JWTPolicyFieldName = ""
@@ -1806,27 +1729,24 @@ func TestJWTDefaultPolicies(t *testing.T) {
 
 		// Default
 		LoadAPI(spec)
-		resp, _ := ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1, defPol2})
 
 		// Same to check stored correctly
 		LoadAPI(spec)
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1, defPol2})
 
 		// Claim
 		spec.JWTPolicyFieldName = policyFieldName
 		LoadAPI(spec)
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{tokenPol})
 	})
 
@@ -1841,26 +1761,23 @@ func TestJWTDefaultPolicies(t *testing.T) {
 		// Claim
 		spec.JWTPolicyFieldName = policyFieldName
 		LoadAPI(spec)
-		resp, _ := ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{tokenPol})
 
 		// Same to check stored correctly
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{tokenPol})
 
 		// Default
 		spec.JWTPolicyFieldName = ""
 		LoadAPI(spec)
-		resp, _ = ts.Run(t, test.TestCase{
+		_, _ = ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 		assert(t, []string{defPol1, defPol2})
 	})
 }
@@ -1874,10 +1791,9 @@ func TestJWTECDSASign(t *testing.T) {
 	defer ResetTestConfig()
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/ECDSA signature needs a test. currently defaults to HMAC", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -1890,10 +1806,9 @@ func TestJWTUnknownSign(t *testing.T) {
 	defer ResetTestConfig()
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/ECDSA signature needs a test. currently defaults to HMAC", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers: authHeaders, Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -1921,12 +1836,11 @@ func TestJWTRSAInvalidPublickKey(t *testing.T) {
 	})
 	authHeaders := map[string]string{"authorization": jwtToken}
 	t.Run("Request with valid JWT/RSA signature/invalid public key", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Headers:   authHeaders,
 			Code:      http.StatusForbidden,
 			BodyMatch: "Key not authorized:Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key",
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -1975,11 +1889,10 @@ func TestJWTExpOverride(t *testing.T) {
 		authHeaders := map[string]string{"authorization": jwtToken}
 
 		//JWT expiry overrides internal token which gets expiry from policy so second request will pass
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Headers: authHeaders, Code: http.StatusOK, Delay: 1100 * time.Millisecond},
 			{Headers: authHeaders, Code: http.StatusOK},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("JWT expiration smaller then policy", func(t *testing.T) {
@@ -1996,10 +1909,9 @@ func TestJWTExpOverride(t *testing.T) {
 		authHeaders := map[string]string{"authorization": jwtToken}
 
 		// Should not allow expired JWTs
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Headers: authHeaders, Code: http.StatusUnauthorized},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("JWT expired but renewed, policy without expiration", func(t *testing.T) {
@@ -2025,12 +1937,11 @@ func TestJWTExpOverride(t *testing.T) {
 		newAuthHeaders := map[string]string{"authorization": newJwtToken}
 
 		// Should not allow expired JWTs
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Headers: authHeaders, Code: http.StatusOK, Delay: 1100 * time.Millisecond},
 			{Headers: authHeaders, Code: http.StatusUnauthorized},
 			{Headers: newAuthHeaders, Code: http.StatusOK},
 		}...)
-		defer resp.Body.Close()
 	})
 
 }

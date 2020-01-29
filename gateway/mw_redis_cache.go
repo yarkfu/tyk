@@ -200,9 +200,6 @@ func (m *RedisCacheMiddleware) ProcessRequest(w http.ResponseWriter, r *http.Req
 			vp := VirtualEndpoint{BaseMiddleware: m.BaseMiddleware}
 			vp.Init()
 			resVal = vp.ServeHTTPForCache(w, r, nil)
-			if resVal != nil {
-				defer resVal.Body.Close()
-			}
 		} else {
 			// This passes through and will write the value to the writer, but spit out a copy for the cache
 			log.Debug("Not virtual, passing")
@@ -215,9 +212,6 @@ func (m *RedisCacheMiddleware) ProcessRequest(w http.ResponseWriter, r *http.Req
 				ctxSetTransformRequestMethod(r, "")
 			}
 			resVal = m.sh.ServeHTTPWithCache(w, r)
-			if resVal != nil {
-				defer resVal.Body.Close()
-			}
 		}
 
 		cacheThisRequest := true

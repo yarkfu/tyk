@@ -307,15 +307,12 @@ func (d *VirtualEndpoint) ProcessRequest(w http.ResponseWriter, r *http.Request,
 		return nil, http.StatusOK
 	}
 
-	res := d.ServeHTTPForCache(w, r, vmeta)
-	if res == nil {
+	if res := d.ServeHTTPForCache(w, r, vmeta); res == nil {
 		if vmeta.ProxyOnError {
 			return nil, http.StatusOK
 		} else {
 			return errors.New("Error during virtual endpoint execution. Contact Administrator for more details."), http.StatusInternalServerError
 		}
-	} else {
-		res.Body.Close()
 	}
 
 	return nil, mwStatusRespond

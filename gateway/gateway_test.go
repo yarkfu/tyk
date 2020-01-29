@@ -62,10 +62,10 @@ func TestAA(t *testing.T) {
 		spec.Proxy.ListenPath = "/"
 	})
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Code: 200},
 	}...)
-	defer resp.Body.Close()
+
 }
 
 type tykErrorResponse struct {
@@ -99,7 +99,7 @@ func TestParambasedAuth(t *testing.T) {
 
 	expectedBody := `"Form":{"authorization":"` + key + `","bar":"swoggetty","baz":"swoogetty","foo":"swiggetty"}`
 
-	resp, _ := ts.Run(t, test.TestCase{
+	ts.Run(t, test.TestCase{
 		Method:    "POST",
 		Path:      "/?authorization=" + key,
 		Headers:   map[string]string{"Content-Type": "application/x-www-form-urlencoded"},
@@ -107,7 +107,6 @@ func TestParambasedAuth(t *testing.T) {
 		Code:      200,
 		BodyMatch: expectedBody,
 	})
-	defer resp.Body.Close()
 }
 
 func TestStripPathWithURLRewrite(t *testing.T) {
@@ -135,10 +134,9 @@ func TestStripPathWithURLRewrite(t *testing.T) {
 
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/myapi/anything/a/myapi/b/c", BodyMatch: `"Url":"/something/a/myapi/b/c"`},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 
@@ -156,11 +154,10 @@ func TestSkipTargetPassEscapingOff(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/(abc,xyz)?arg=val", BodyMatch: `"Url":"/%28abc,xyz%29\?arg=val`},
 			{Path: "/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/%28abc,xyz%29\?arg=val`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Without escaping", func(t *testing.T) {
@@ -172,11 +169,10 @@ func TestSkipTargetPassEscapingOff(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/(abc,xyz)?arg=val", BodyMatch: `"Url":"/\(abc,xyz\)\?arg=val"`},
 			{Path: "/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/%28abc,xyz%29\?arg=val"`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("With escaping, listen path and target URL are set, StripListenPath is OFF", func(t *testing.T) {
@@ -190,11 +186,10 @@ func TestSkipTargetPassEscapingOff(t *testing.T) {
 			spec.Proxy.TargetURL = TestHttpAny + "/sent_to_me"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/listen_me/(abc,xyz)?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/%28abc,xyz%29\?arg=val"`},
 			{Path: "/listen_me/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/%28abc,xyz%29\?arg=val"`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Without escaping, listen path and target URL are set, StripListenPath is OFF", func(t *testing.T) {
@@ -208,11 +203,10 @@ func TestSkipTargetPassEscapingOff(t *testing.T) {
 			spec.Proxy.TargetURL = TestHttpAny + "/sent_to_me"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/listen_me/(abc,xyz)?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/\(abc,xyz\)\?arg=val"`},
 			{Path: "/listen_me/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/%28abc,xyz%29\?arg=val"`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("With escaping, listen path and target URL are set, StripListenPath is ON", func(t *testing.T) {
@@ -226,11 +220,10 @@ func TestSkipTargetPassEscapingOff(t *testing.T) {
 			spec.Proxy.TargetURL = TestHttpAny + "/sent_to_me"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/listen_me/(abc,xyz)?arg=val", BodyMatch: `"Url":"/sent_to_me/%28abc,xyz%29\?arg=val"`},
 			{Path: "/listen_me/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/sent_to_me/%28abc,xyz%29\?arg=val"`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Without escaping, listen path and target URL are set, StripListenPath is ON", func(t *testing.T) {
@@ -244,11 +237,10 @@ func TestSkipTargetPassEscapingOff(t *testing.T) {
 			spec.Proxy.TargetURL = TestHttpAny + "/sent_to_me"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/listen_me/(abc,xyz)?arg=val", BodyMatch: `"Url":"/sent_to_me/\(abc,xyz\)\?arg=val"`},
 			{Path: "/listen_me/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/sent_to_me/%28abc,xyz%29\?arg=val"`},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 
@@ -278,10 +270,9 @@ func TestSkipTargetPassEscapingOffWithSkipURLCleaningTrue(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/abc/xyz/http%3A%2F%2Ftest.com?arg=val", BodyMatch: `"Url":"/abc/xyz/http%3A%2F%2Ftest.com\?arg=val`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Without escaping, default", func(t *testing.T) {
@@ -293,10 +284,9 @@ func TestSkipTargetPassEscapingOffWithSkipURLCleaningTrue(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/abc/xyz/http%3A%2F%2Ftest.com?arg=val", BodyMatch: `"Url":"/abc/xyz/http%3A%2F%2Ftest.com\?arg=val`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("With escaping, listen path and target URL are set, StripListenPath is OFF", func(t *testing.T) {
@@ -310,12 +300,11 @@ func TestSkipTargetPassEscapingOffWithSkipURLCleaningTrue(t *testing.T) {
 			spec.Proxy.TargetURL = TestHttpAny + "/sent_to_me"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/listen_me/(abc,xyz)?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/%28abc,xyz%29\?arg=val"`},
 			{Path: "/listen_me/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/%28abc,xyz%29\?arg=val"`},
 			{Path: "/listen_me/http%3A%2F%2Ftest.com?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/http%3A%2F%2Ftest.com\?arg=val`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Without escaping, listen path and target URL are set, StripListenPath is OFF", func(t *testing.T) {
@@ -329,12 +318,11 @@ func TestSkipTargetPassEscapingOffWithSkipURLCleaningTrue(t *testing.T) {
 			spec.Proxy.TargetURL = TestHttpAny + "/sent_to_me"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/listen_me/(abc,xyz)?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/\(abc,xyz\)\?arg=val"`},
 			{Path: "/listen_me/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/%28abc,xyz%29\?arg=val"`},
 			{Path: "/listen_me/http%3A%2F%2Ftest.com?arg=val", BodyMatch: `"Url":"/sent_to_me/listen_me/http%3A%2F%2Ftest.com\?arg=val`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("With escaping, listen path and target URL are set, StripListenPath is ON", func(t *testing.T) {
@@ -348,12 +336,11 @@ func TestSkipTargetPassEscapingOffWithSkipURLCleaningTrue(t *testing.T) {
 			spec.Proxy.TargetURL = TestHttpAny + "/sent_to_me"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/listen_me/(abc,xyz)?arg=val", BodyMatch: `"Url":"/sent_to_me/%28abc,xyz%29\?arg=val"`},
 			{Path: "/listen_me/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/sent_to_me/%28abc,xyz%29\?arg=val"`},
 			{Path: "/listen_me/http%3A%2F%2Ftest.com?arg=val", BodyMatch: `"Url":"/sent_to_me/http%3A%2F%2Ftest.com\?arg=val`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Without escaping, listen path and target URL are set, StripListenPath is ON", func(t *testing.T) {
@@ -367,12 +354,11 @@ func TestSkipTargetPassEscapingOffWithSkipURLCleaningTrue(t *testing.T) {
 			spec.Proxy.TargetURL = TestHttpAny + "/sent_to_me"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/listen_me/(abc,xyz)?arg=val", BodyMatch: `"Url":"/sent_to_me/\(abc,xyz\)\?arg=val"`},
 			{Path: "/listen_me/%28abc,xyz%29?arg=val", BodyMatch: `"Url":"/sent_to_me/%28abc,xyz%29\?arg=val"`},
 			{Path: "/listen_me/http%3A%2F%2Ftest.com?arg=val", BodyMatch: `"Url":"/sent_to_me/http%3A%2F%2Ftest.com\?arg=val`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 }
@@ -448,7 +434,7 @@ func TestQuota(t *testing.T) {
 	}
 
 	webhookWG.Add(1)
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Path: "/", Headers: authHeaders, Code: 200},
 		// Ignored path should not affect quota
 		{Path: "/get", Headers: authHeaders, Code: 200},
@@ -457,7 +443,6 @@ func TestQuota(t *testing.T) {
 		// Ignored path works without auth
 		{Path: "/get", Code: 200},
 	}...)
-	defer resp.Body.Close()
 	webhookWG.Wait()
 }
 
@@ -479,11 +464,10 @@ func TestAnalytics(t *testing.T) {
 	analytics.Store.GetAndDeleteSet(analyticsKeyName)
 
 	t.Run("Log errors", func(t *testing.T) {
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/", Code: 401},
 			{Path: "/", Code: 401},
 		}...)
-		defer resp.Body.Close()
 
 		// let records to to be sent
 		time.Sleep(recordsBufferFlushInterval + 50)
@@ -507,10 +491,9 @@ func TestAnalytics(t *testing.T) {
 			"authorization": key,
 		}
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/", Headers: authHeaders, Code: 200,
 		})
-		defer resp.Body.Close()
 
 		// let records to to be sent
 		time.Sleep(recordsBufferFlushInterval + 50)
@@ -547,10 +530,9 @@ func TestAnalytics(t *testing.T) {
 			"authorization": key,
 		}
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/", Headers: authHeaders, Code: 200,
 		})
-		defer resp.Body.Close()
 
 		// let records to to be sent
 		time.Sleep(recordsBufferFlushInterval + 50)
@@ -597,10 +579,9 @@ func TestAnalytics(t *testing.T) {
 			"authorization": key,
 		}
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/", Headers: authHeaders, Code: 200,
 		})
-		defer resp.Body.Close()
 
 		// let records to to be sent
 		time.Sleep(recordsBufferFlushInterval + 50)
@@ -643,10 +624,9 @@ func TestAnalytics(t *testing.T) {
 			"authorization": key,
 		}
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/", Headers: authHeaders, Code: 200,
 		})
-		defer resp.Body.Close()
 
 		// let records to to be sent
 		time.Sleep(recordsBufferFlushInterval + 50)
@@ -697,10 +677,9 @@ func TestAnalytics(t *testing.T) {
 			"authorization": key,
 		}
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/", Headers: authHeaders, Code: 200,
 		})
-		defer resp.Body.Close()
 
 		// let records to to be sent
 		time.Sleep(recordsBufferFlushInterval + 50)
@@ -758,11 +737,10 @@ func TestAnalytics(t *testing.T) {
 			"authorization": key,
 		}
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/", Headers: authHeaders, Code: 200},
 			{Path: "/", Headers: authHeaders, Code: 200},
 		}...)
-		defer resp.Body.Close()
 
 		// let records to to be sent
 		time.Sleep(recordsBufferFlushInterval + 50)
@@ -864,22 +842,20 @@ func TestHttpPprof(t *testing.T) {
 		sepatateControlAPI: true,
 	})
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Path: "/debug/pprof/", Code: 404},
 		{Path: "/debug/pprof/", Code: 404, ControlRequest: true},
 	}...)
-	defer resp.Body.Close()
 	ts.Close()
 
 	*cli.HTTPProfile = true
 
 	ts.Start()
-	resp, _ = ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Path: "/debug/pprof/", Code: 404},
 		{Path: "/debug/pprof/", Code: 200, ControlRequest: true},
 		{Path: "/debug/pprof/heap", Code: 200, ControlRequest: true},
 	}...)
-	defer resp.Body.Close()
 	ts.Close()
 }
 
@@ -913,11 +889,10 @@ func TestListenPathTykPrefix(t *testing.T) {
 		spec.Proxy.ListenPath = "/tyk-foo/"
 	})
 
-	resp, _ := ts.Run(t, test.TestCase{
+	ts.Run(t, test.TestCase{
 		Path: "/tyk-foo/",
 		Code: 200,
 	})
-	defer resp.Body.Close()
 }
 
 func TestReloadGoroutineLeakWithAsyncWrites(t *testing.T) {
@@ -1063,7 +1038,7 @@ func TestProxyUserAgent(t *testing.T) {
 		spec.Proxy.ListenPath = "/"
 	})
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{
 			Headers:   map[string]string{"User-Agent": ""},
 			BodyMatch: fmt.Sprintf(`"User-Agent":"%s"`, defaultUserAgent),
@@ -1073,7 +1048,6 @@ func TestProxyUserAgent(t *testing.T) {
 			BodyMatch: `"User-Agent":"SomeAgent"`,
 		},
 	}...)
-	defer resp.Body.Close()
 }
 
 func TestSkipUrlCleaning(t *testing.T) {
@@ -1096,10 +1070,9 @@ func TestSkipUrlCleaning(t *testing.T) {
 		spec.Proxy.TargetURL = s.URL
 	})
 
-	resp, _ := ts.Run(t, test.TestCase{
+	ts.Run(t, test.TestCase{
 		Path: "/http://example.com", BodyMatch: "/http://example.com", Code: 200,
 	})
-	defer resp.Body.Close()
 }
 
 func TestMultiTargetProxy(t *testing.T) {
@@ -1118,7 +1091,7 @@ func TestMultiTargetProxy(t *testing.T) {
 		spec.Proxy.ListenPath = "/"
 	})
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{
 			Headers:   map[string]string{"version": "vdef"},
 			JSONMatch: map[string]string{"Url": `"/"`},
@@ -1130,7 +1103,6 @@ func TestMultiTargetProxy(t *testing.T) {
 			Code:      200,
 		},
 	}...)
-	defer resp.Body.Close()
 }
 
 func TestCustomDomain(t *testing.T) {
@@ -1154,13 +1126,12 @@ func TestCustomDomain(t *testing.T) {
 			},
 		)
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Code: 200, Path: "/with_domain", Domain: "host1"},
 			{Code: 404, Path: "/with_domain"},
 			{Code: 200, Path: "/without_domain"},
 			{Code: 200, Path: "/tyk/keys", AdminAuth: true},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Without custom domain support", func(t *testing.T) {
@@ -1178,13 +1149,12 @@ func TestCustomDomain(t *testing.T) {
 			},
 		)
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Code: 200, Path: "/with_domain", Domain: "host1"},
 			{Code: 200, Path: "/with_domain"},
 			{Code: 200, Path: "/without_domain"},
 			{Code: 200, Path: "/tyk/keys", AdminAuth: true},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 
@@ -1193,10 +1163,9 @@ func TestHelloHealthcheck(t *testing.T) {
 	defer ts.Close()
 
 	t.Run("Without APIs", func(t *testing.T) {
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/hello", Code: 200},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("With APIs", func(t *testing.T) {
@@ -1204,11 +1173,10 @@ func TestHelloHealthcheck(t *testing.T) {
 			spec.Proxy.ListenPath = "/sample"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/hello", Code: 200},
 			{Method: "GET", Path: "/sample/hello", Code: 200},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 
@@ -1229,14 +1197,13 @@ func TestCacheAllSafeRequests(t *testing.T) {
 
 	headerCache := map[string]string{"x-tyk-cached-response": "1"}
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Method: "GET", Path: "/", HeadersNotMatch: headerCache, Delay: 10 * time.Millisecond},
 		{Method: "GET", Path: "/", HeadersMatch: headerCache},
 		{Method: "POST", Path: "/", HeadersNotMatch: headerCache},
 		{Method: "POST", Path: "/", HeadersNotMatch: headerCache},
 		{Method: "GET", Path: "/", HeadersMatch: headerCache},
 	}...)
-	defer resp.Body.Close()
 }
 
 func TestCacheWithAdvanceUrlRewrite(t *testing.T) {
@@ -1283,7 +1250,7 @@ func TestCacheWithAdvanceUrlRewrite(t *testing.T) {
 	matchHeaders := map[string]string{"rewritePath": "newpath"}
 	randomheaders := map[string]string{"something": "abcd"}
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Method: http.MethodGet, Path: "/test", Headers: matchHeaders, HeadersNotMatch: headerCache, Delay: 10 * time.Millisecond},
 		{Method: http.MethodGet, Path: "/test", Headers: matchHeaders, HeadersMatch: headerCache},
 		//Even if trigger condition failed, as response is cached
@@ -1292,7 +1259,6 @@ func TestCacheWithAdvanceUrlRewrite(t *testing.T) {
 		{Method: http.MethodPost, Path: "/test", HeadersNotMatch: headerCache},
 		{Method: http.MethodGet, Path: "/test", HeadersMatch: headerCache},
 	}...)
-	defer resp.Body.Close()
 }
 
 func TestCachePostRequest(t *testing.T) {
@@ -1323,7 +1289,7 @@ func TestCachePostRequest(t *testing.T) {
 
 	headerCache := map[string]string{"x-tyk-cached-response": "1"}
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Method: http.MethodPost, Path: "/", Data: "{\"id\":\"1\",\"name\":\"test\"}", HeadersNotMatch: headerCache, Delay: 10 * time.Millisecond},
 		{Method: http.MethodPost, Path: "/", Data: "{\"id\":\"1\",\"name\":\"test\"}", HeadersMatch: headerCache, Delay: 10 * time.Millisecond},
 		{Method: http.MethodPost, Path: "/", Data: "{\"id\":\"2\",\"name\":\"test\"}", HeadersNotMatch: headerCache, Delay: 10 * time.Millisecond},
@@ -1331,7 +1297,6 @@ func TestCachePostRequest(t *testing.T) {
 		{Method: http.MethodPost, Path: "/", Data: "{\"name\":\"test\"}", HeadersNotMatch: headerCache, Delay: 10 * time.Millisecond},
 		{Method: http.MethodPost, Path: "/", Data: "{\"name\":\"test2\"}", HeadersMatch: headerCache, Delay: 10 * time.Millisecond},
 	}...)
-	defer resp.Body.Close()
 }
 
 func TestCacheEtag(t *testing.T) {
@@ -1359,13 +1324,12 @@ func TestCacheEtag(t *testing.T) {
 	invalidEtag := map[string]string{"If-None-Match": "invalid"}
 	validEtag := map[string]string{"If-None-Match": "12345"}
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Method: "GET", Path: "/", HeadersNotMatch: headerCache, Delay: 100 * time.Millisecond},
 		{Method: "GET", Path: "/", HeadersMatch: headerCache, BodyMatch: "body"},
 		{Method: "GET", Path: "/", Headers: invalidEtag, HeadersMatch: headerCache, BodyMatch: "body"},
 		{Method: "GET", Path: "/", Headers: validEtag, HeadersMatch: headerCache, BodyNotMatch: "body"},
 	}...)
-	defer resp.Body.Close()
 }
 
 // func TestWebsocketsUpstreamUpgradeRequest(t *testing.T) {
@@ -1382,7 +1346,7 @@ func TestCacheEtag(t *testing.T) {
 // 		spec.Proxy.ListenPath = "/"
 // 	})
 
-// 	resp,_:=ts.Run(t, test.TestCase{
+// 	ts.Run(t, test.TestCase{
 // 		Path: "/ws",
 // 		Headers: map[string]string{
 // 			"Connection":            "Upgrade",
@@ -1410,11 +1374,10 @@ func TestWebsocketsSeveralOpenClose(t *testing.T) {
 	baseURL := strings.Replace(ts.URL, "http://", "ws://", -1)
 
 	// connect 1st time, send and read message, close connection
-	conn1, resp, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
+	conn1, _, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
 	if err != nil {
 		t.Fatalf("cannot make websocket connection: %v", err)
 	}
-	defer resp.Body.Close()
 	err = conn1.WriteMessage(websocket.BinaryMessage, []byte("test message 1"))
 	if err != nil {
 		t.Fatalf("cannot write message: %v", err)
@@ -1429,11 +1392,10 @@ func TestWebsocketsSeveralOpenClose(t *testing.T) {
 	conn1.Close()
 
 	// connect 2nd time, send and read message, but don't close yet
-	conn2, resp, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
+	conn2, _, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
 	if err != nil {
 		t.Fatalf("cannot make websocket connection: %v", err)
 	}
-	defer resp.Body.Close()
 	err = conn2.WriteMessage(websocket.BinaryMessage, []byte("test message 2"))
 	if err != nil {
 		t.Fatalf("cannot write message: %v", err)
@@ -1447,11 +1409,10 @@ func TestWebsocketsSeveralOpenClose(t *testing.T) {
 	}
 
 	// connect 3d time having one connection already open before, send and read message
-	conn3, resp, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
+	conn3, _, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
 	if err != nil {
 		t.Fatalf("cannot make websocket connection: %v", err)
 	}
-	defer resp.Body.Close()
 	err = conn3.WriteMessage(websocket.BinaryMessage, []byte("test message 3"))
 	if err != nil {
 		t.Fatalf("cannot write message: %v", err)
@@ -1511,11 +1472,10 @@ func TestWebsocketsAndHTTPEndpointMatch(t *testing.T) {
 	baseURL := strings.Replace(ts.URL, "http://", "ws://", -1)
 
 	// connect to ws, send 1st message and check reply
-	wsConn, resp, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
+	wsConn, _, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
 	if err != nil {
 		t.Fatalf("cannot make websocket connection: %v", err)
 	}
-	defer resp.Body.Close()
 	err = wsConn.WriteMessage(websocket.BinaryMessage, []byte("test message 1"))
 	if err != nil {
 		t.Fatalf("cannot write message: %v", err)
@@ -1529,20 +1489,18 @@ func TestWebsocketsAndHTTPEndpointMatch(t *testing.T) {
 	}
 
 	// make 1st http request
-	resp, _ = ts.Run(t, test.TestCase{
+	ts.Run(t, test.TestCase{
 		Method: "GET",
 		Path:   "/abc",
 		Code:   http.StatusOK,
 	})
-	defer resp.Body.Close()
 
 	// send second WS connection upgrade request
 	// connect to ws, send 1st message and check reply
-	wsConn2, resp, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
+	wsConn2, _, err := websocket.DefaultDialer.Dial(baseURL+"/ws", nil)
 	if err != nil {
 		t.Fatalf("cannot make websocket connection: %v", err)
 	}
-	defer resp.Body.Close()
 	err = wsConn2.WriteMessage(websocket.BinaryMessage, []byte("test message 1 to ws 2"))
 	if err != nil {
 		t.Fatalf("cannot write message: %v", err)
@@ -1570,22 +1528,20 @@ func TestWebsocketsAndHTTPEndpointMatch(t *testing.T) {
 	}
 
 	// make 2nd http request
-	resp, _ = ts.Run(t, test.TestCase{
+	ts.Run(t, test.TestCase{
 		Method: "GET",
 		Path:   "/abc",
 		Code:   http.StatusOK,
 	})
-	defer resp.Body.Close()
 
 	wsConn.Close()
 
 	// make 3d http request after closing WS connection
-	resp, _ = ts.Run(t, test.TestCase{
+	ts.Run(t, test.TestCase{
 		Method: "GET",
 		Path:   "/abc",
 		Code:   http.StatusOK,
 	})
-	defer resp.Body.Close()
 }
 
 func createTestUptream(t *testing.T, allowedConns int, readsPerConn int) net.Listener {
@@ -1654,12 +1610,11 @@ func TestKeepAliveConns(t *testing.T) {
 			spec.Proxy.TargetURL = "http://" + upstream.Addr().String()
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Code: 200},
 			{Code: 200},
 			{Code: 200},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Should use separate connection", func(t *testing.T) {
@@ -1676,12 +1631,11 @@ func TestKeepAliveConns(t *testing.T) {
 			spec.Proxy.TargetURL = "http://" + upstream.Addr().String()
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Code: 200},
 			{Code: 200},
 			{Code: 200},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Should respect max_conn_time", func(t *testing.T) {
@@ -1699,19 +1653,17 @@ func TestKeepAliveConns(t *testing.T) {
 			spec.Proxy.TargetURL = "http://" + upstream.Addr().String()
 		})[0]
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Code: 200},
 			{Code: 200},
 		}...)
-		defer resp.Body.Close()
 
 		// Set in past to re-create transport
 		spec.HTTPTransportCreated = time.Now().Add(-time.Minute)
 
 		// Should be called in new connection
 		// We already made 2 requests above, so 3th in same not allowed
-		resp, _ = ts.Run(t, test.TestCase{Code: 200})
-		defer resp.Body.Close()
+		ts.Run(t, test.TestCase{Code: 200})
 	})
 }
 
@@ -1752,13 +1704,12 @@ func TestRateLimitForAPIAndRateLimitAndQuotaCheck(t *testing.T) {
 	})
 	defer FallbackKeySesionManager.RemoveSession(sess2token, false)
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Headers: map[string]string{"Authorization": sess1token}, Code: http.StatusOK, Path: "/", Delay: 100 * time.Millisecond},
 		{Headers: map[string]string{"Authorization": sess1token}, Code: http.StatusTooManyRequests, Path: "/"},
 		{Headers: map[string]string{"Authorization": sess2token}, Code: http.StatusOK, Path: "/", Delay: 100 * time.Millisecond},
 		{Headers: map[string]string{"Authorization": sess2token}, Code: http.StatusTooManyRequests, Path: "/"},
 	}...)
-	defer resp.Body.Close()
 }
 
 func TestTracing(t *testing.T) {
@@ -1773,7 +1724,7 @@ func TestTracing(t *testing.T) {
 	keyID := CreateSession(func(s *user.SessionState) {})
 	authHeaders := map[string][]string{"Authorization": {keyID}}
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Method: "GET", Path: "/tyk/debug", AdminAuth: true, Code: 405},
 		{Method: "POST", Path: "/tyk/debug", AdminAuth: true, Code: 400, BodyMatch: "Request malformed"},
 		{Method: "POST", Path: "/tyk/debug", Data: `{}`, AdminAuth: true, Code: 400, BodyMatch: "Spec field is missing"},
@@ -1782,7 +1733,6 @@ func TestTracing(t *testing.T) {
 		{Method: "POST", Path: "/tyk/debug", Data: traceRequest{Spec: spec.APIDefinition, Request: &traceHttpRequest{Method: "GET", Path: "/"}}, AdminAuth: true, Code: 200, BodyMatch: `401 Unauthorized`},
 		{Method: "POST", Path: "/tyk/debug", Data: traceRequest{Spec: spec.APIDefinition, Request: &traceHttpRequest{Path: "/", Headers: authHeaders}}, AdminAuth: true, Code: 200, BodyMatch: `200 OK`},
 	}...)
-	defer resp.Body.Close()
 }
 
 func TestBrokenClients(t *testing.T) {

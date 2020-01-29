@@ -819,26 +819,29 @@ func (p *ReverseProxy) WrappedServeHTTP(rw http.ResponseWriter, req *http.Reques
 	}
 
 	// do request round trip
+	var res *http.Response
+	var err error
+	var upstreamLatency time.Duration
 	if breakerEnforced {
 		if !breakerConf.CB.Ready() {
 			p.logger.Debug("ON REQUEST: Circuit Breaker is in OPEN state")
 			p.ErrorHandler.HandleError(rw, logreq, "Service temporarily unavailable.", 503, true)
-
 			return ProxyResponse{}
 		}
-
 		p.logger.Debug("ON REQUEST: Circuit Breaker is in CLOSED or HALF-OPEN state")
-	}
-
-	begin := time.Now()
-	res, err := roundTripper.RoundTrip(outreq)
-	if err != nil || res.StatusCode/100 == 5 {
-		breakerConf.CB.Fail()
+		begin := time.Now()
+		res, err = roundTripper.RoundTrip(outreq)
+		upstreamLatency = time.Since(begin)
+		if err != nil || res.StatusCode/100 == 5 {
+			breakerConf.CB.Fail()
+		} else {
+			breakerConf.CB.Success()
+		}
 	} else {
-		breakerConf.CB.Success()
+		begin := time.Now()
+		res, err = roundTripper.RoundTrip(outreq)
+		upstreamLatency = time.Since(begin)
 	}
-	defer res.Body.Close()
-	upstreamLatency := time.Since(begin)
 
 	if err != nil {
 
@@ -1222,8 +1225,7 @@ func nopCloseResponseBody(r *http.Response) {
 		return
 	}
 
-	resp := copyResponse(r)
-	defer resp.Body.Close()
+	copyResponse(r)
 }
 
 func IsUpgrade(req *http.Request) (bool, string) {

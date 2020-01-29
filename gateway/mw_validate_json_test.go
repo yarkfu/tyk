@@ -54,7 +54,7 @@ func TestValidateJSONSchema(t *testing.T) {
 
 	testPrepareValidateJSONSchema()
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Method: "POST", Path: "/without_validation", Data: "{not_valid}", Code: http.StatusOK},
 		{Method: "POST", Path: "/v", Data: `{"age":23}`, BodyMatch: `firstName: firstName is required; lastName: lastName is required`, Code: http.StatusUnprocessableEntity},
 		{Method: "POST", Path: "/v", Data: `[]`, BodyMatch: `Expected: object, given: array`, Code: http.StatusUnprocessableEntity},
@@ -62,7 +62,6 @@ func TestValidateJSONSchema(t *testing.T) {
 		{Method: "POST", Path: "/v", Data: `{"age":23, "firstName": "Harry", "lastName": "Potter"}`, Code: http.StatusOK},
 		{Method: "POST", Path: "/v", Data: `{"age":23, "firstName": "Harry", "lastName": "Potter", "objs": "d"}`, Code: http.StatusUnprocessableEntity, BodyMatch: `objs: objs must be one of the following: \\"a\\", \\"b\\", \\"c\\"`},
 	}...)
-	defer resp.Body.Close()
 }
 
 func BenchmarkValidateJSONSchema(b *testing.B) {
@@ -74,13 +73,12 @@ func BenchmarkValidateJSONSchema(b *testing.B) {
 	testPrepareValidateJSONSchema()
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, []test.TestCase{
+		ts.Run(b, []test.TestCase{
 			{Method: "POST", Path: "/without_validation", Data: "{not_valid}", Code: http.StatusOK},
 			{Method: "POST", Path: "/v", Data: `{"age":23}`, BodyMatch: `firstName: firstName is required; lastName: lastName is required`, Code: http.StatusUnprocessableEntity},
 			{Method: "POST", Path: "/v", Data: `[]`, BodyMatch: `Expected: object, given: array`, Code: http.StatusUnprocessableEntity},
 			{Method: "POST", Path: "/v", Data: `not_json`, Code: http.StatusBadRequest},
 			{Method: "POST", Path: "/v", Data: `{"age":23, "firstName": "Harry", "lastName": "Potter"}`, Code: http.StatusOK},
 		}...)
-		defer resp.Body.Close()
 	}
 }

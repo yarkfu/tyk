@@ -184,17 +184,15 @@ func requestThrottlingTest(limiter string, testLevel string) func(t *testing.T) 
 				}
 
 				if requestThrottlingEnabled && throttleInterval > 0 {
-					resp, _ := ts.Run(t, []test.TestCase{
+					ts.Run(t, []test.TestCase{
 						{Path: "/", Headers: authHeaders, Code: 200, Delay: 100 * time.Millisecond},
 						{Path: "/", Headers: authHeaders, Code: 200},
 					}...)
-					defer resp.Body.Close()
 				} else {
-					resp, _ := ts.Run(t, []test.TestCase{
+					ts.Run(t, []test.TestCase{
 						{Path: "/", Headers: authHeaders, Code: 200, Delay: 100 * time.Millisecond},
 						{Path: "/", Headers: authHeaders, Code: 429},
 					}...)
-					defer resp.Body.Close()
 				}
 			}
 		}

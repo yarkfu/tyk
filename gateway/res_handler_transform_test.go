@@ -39,10 +39,9 @@ func TestTransformResponseWithURLRewrite(t *testing.T) {
 			})
 		})
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/get", Code: 200, BodyMatch: `{"http_method":"GET"}`,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("Transform path equals rewrite to ", func(t *testing.T) {
@@ -59,10 +58,9 @@ func TestTransformResponseWithURLRewrite(t *testing.T) {
 			})
 		})
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/get", Code: 200, BodyMatch: `{"http_method":"GET"}`,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("Transform path equals rewrite path", func(t *testing.T) {
@@ -81,10 +79,9 @@ func TestTransformResponseWithURLRewrite(t *testing.T) {
 			})
 		})
 
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/abc", Code: 200, BodyMatch: `{"http_method":"GET"}`,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -112,10 +109,9 @@ func TestTransformResponse_ContextVars(t *testing.T) {
 		})
 	})
 
-	resp, _ := ts.Run(t, test.TestCase{
+	ts.Run(t, test.TestCase{
 		Headers: map[string]string{"Foo": "Bar"}, Path: "/get", Code: 200, BodyMatch: `{"foo":"<no value>"}`,
 	})
-	defer resp.Body.Close()
 
 	// When Context Vars are enabled
 	BuildAndLoadAPI(func(spec *APISpec) {
@@ -127,10 +123,9 @@ func TestTransformResponse_ContextVars(t *testing.T) {
 		})
 	})
 
-	resp, _ = ts.Run(t, test.TestCase{
+	ts.Run(t, test.TestCase{
 		Headers: map[string]string{"Foo": "Bar"}, Path: "/get", Code: 200, BodyMatch: `{"foo":"Bar"}`,
 	})
-	defer resp.Body.Close()
 }
 
 func TestTransformResponse_WithCache(t *testing.T) {
@@ -167,18 +162,17 @@ func TestTransformResponse_WithCache(t *testing.T) {
 	// without cache
 	createAPI(false)
 
-	resp, _ := ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Path: path, Headers: map[string]string{"Foo": "Bar"}, Code: 200, BodyMatch: `{"foo":"Bar"}`},
 		{Path: path, Headers: map[string]string{"Foo": "Bar2"}, Code: 200, BodyMatch: `{"foo":"Bar2"}`},
 	}...)
-	defer resp.Body.Close()
 
 	// with cache
 	createAPI(true)
 
-	resp, _ = ts.Run(t, []test.TestCase{
+	ts.Run(t, []test.TestCase{
 		{Path: path, Headers: map[string]string{"Foo": "Bar"}, Code: 200, BodyMatch: `{"foo":"Bar"}`},  // Returns response and caches it
 		{Path: path, Headers: map[string]string{"Foo": "Bar2"}, Code: 200, BodyMatch: `{"foo":"Bar"}`}, // Returns cached response directly
 	}...)
-	defer resp.Body.Close()
+
 }

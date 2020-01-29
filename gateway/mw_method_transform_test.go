@@ -33,12 +33,11 @@ func TestMethodTransform(t *testing.T) {
 			})
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/get", BodyMatch: `"Url":"/post"`},
 
 			{Method: "GET", Path: "/get?a=b", BodyMatch: `"Method":"POST"`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Using cache", func(t *testing.T) {
@@ -62,12 +61,11 @@ func TestMethodTransform(t *testing.T) {
 
 		headerCache := map[string]string{"x-tyk-cached-response": "1"}
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/testing", HeadersNotMatch: headerCache, BodyMatch: `"Method":"POST"`},
 			{Method: "GET", Path: "/testing", HeadersMatch: headerCache, BodyMatch: `"Method":"POST"`},
 			{Method: "POST", Path: "/testing", HeadersNotMatch: headerCache},
 			{Method: "GET", Path: "/testing", HeadersMatch: headerCache},
 		}...)
-		defer resp.Body.Close()
 	})
 }

@@ -25,14 +25,13 @@ func testPrepareProcessRequestQuotaLimit(tb testing.TB, ts *Test, data map[strin
 	data["org_id"] = orgID
 
 	// create org key with quota
-	resp, _ := ts.Run(tb, test.TestCase{
+	ts.Run(tb, test.TestCase{
 		Path:      "/tyk/org/keys/" + orgID + "?reset_quota=1",
 		AdminAuth: true,
 		Method:    http.MethodPost,
 		Code:      http.StatusOK,
 		Data:      data,
 	})
-	defer resp.Body.Close()
 }
 
 func TestProcessRequestLiveQuotaLimit(t *testing.T) {
@@ -60,26 +59,23 @@ func TestProcessRequestLiveQuotaLimit(t *testing.T) {
 	t.Run("Process request live with quota", func(t *testing.T) {
 		// 1st ten requests within quota
 		for i := 0; i < 10; i++ {
-			resp, _ := ts.Run(t, test.TestCase{
+			ts.Run(t, test.TestCase{
 				Code: http.StatusOK,
 			})
-			defer resp.Body.Close()
 		}
 
 		// next request should fail with 403 as it is out of quota
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Code: http.StatusForbidden,
 		})
-		defer resp.Body.Close()
 
 		// wait for renewal
 		time.Sleep(4 * time.Second)
 
 		// next one should be OK
-		resp, _ = ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	})
 }
 
@@ -110,10 +106,9 @@ func BenchmarkProcessRequestLiveQuotaLimit(b *testing.B) {
 	)
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, test.TestCase{
+		ts.Run(b, test.TestCase{
 			Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	}
 }
 
@@ -143,10 +138,9 @@ func TestProcessRequestOffThreadQuotaLimit(t *testing.T) {
 	t.Run("Process request off thread with quota", func(t *testing.T) {
 		// at least first 10 requests within quota should be OK
 		for i := 0; i < 10; i++ {
-			resp, _ := ts.Run(t, test.TestCase{
+			ts.Run(t, test.TestCase{
 				Code: http.StatusOK,
 			})
-			defer resp.Body.Close()
 		}
 
 		// some of next request should fail with 403 as it is out of quota
@@ -214,10 +208,9 @@ func BenchmarkProcessRequestOffThreadQuotaLimit(b *testing.B) {
 	)
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, test.TestCase{
+		ts.Run(b, test.TestCase{
 			Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	}
 }
 
@@ -248,10 +241,9 @@ func TestProcessRequestLiveRedisRollingLimiter(t *testing.T) {
 	t.Run("Process request live with rate limit", func(t *testing.T) {
 		// ten requests per sec should be OK
 		for i := 0; i < 10; i++ {
-			resp, _ := ts.Run(t, test.TestCase{
+			ts.Run(t, test.TestCase{
 				Code: http.StatusOK,
 			})
-			defer resp.Body.Close()
 		}
 
 		// wait for next time window
@@ -304,10 +296,9 @@ func BenchmarkProcessRequestLiveRedisRollingLimiter(b *testing.B) {
 	)
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, test.TestCase{
+		ts.Run(b, test.TestCase{
 			Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	}
 }
 
@@ -338,10 +329,9 @@ func TestProcessRequestOffThreadRedisRollingLimiter(t *testing.T) {
 	t.Run("Process request off thread with rate limit", func(t *testing.T) {
 		// ten requests per sec should be OK
 		for i := 0; i < 10; i++ {
-			resp, _ := ts.Run(t, test.TestCase{
+			ts.Run(t, test.TestCase{
 				Code: http.StatusOK,
 			})
-			defer resp.Body.Close()
 		}
 
 		// wait for next time window
@@ -392,9 +382,8 @@ func BenchmarkProcessRequestOffThreadRedisRollingLimiter(b *testing.B) {
 	)
 
 	for i := 0; i < b.N; i++ {
-		resp, _ := ts.Run(b, test.TestCase{
+		ts.Run(b, test.TestCase{
 			Code: http.StatusOK,
 		})
-		defer resp.Body.Close()
 	}
 }

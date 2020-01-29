@@ -86,8 +86,7 @@ func TestGatewayTLS(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, test.TestCase{ErrorMatch: internalTLSErr, Client: client})
+		ts.Run(t, test.TestCase{ErrorMatch: internalTLSErr, Client: client})
 	})
 
 	t.Run("Legacy TLS certificate path", func(t *testing.T) {
@@ -114,8 +113,7 @@ func TestGatewayTLS(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, test.TestCase{Code: 200, Client: client})
+		ts.Run(t, test.TestCase{Code: 200, Client: client})
 
 		CertificateManager.FlushCache()
 	})
@@ -137,8 +135,7 @@ func TestGatewayTLS(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, test.TestCase{Code: 200, Client: client})
+		ts.Run(t, test.TestCase{Code: 200, Client: client})
 
 		CertificateManager.FlushCache()
 	})
@@ -163,8 +160,7 @@ func TestGatewayTLS(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, test.TestCase{Code: 200, Client: client})
+		ts.Run(t, test.TestCase{Code: 200, Client: client})
 
 		CertificateManager.FlushCache()
 	})
@@ -215,8 +211,7 @@ func TestGatewayControlAPIMutualTLS(t *testing.T) {
 		unknownErr := "x509: certificate signed by unknown authority"
 		badcertErr := "tls: bad certificate"
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			// Should acess tyk without client certificates
 			{Client: clientWithoutCert},
 			// Should raise error for ControlAPI without certificate
@@ -233,8 +228,7 @@ func TestGatewayControlAPIMutualTLS(t *testing.T) {
 		config.SetGlobal(globalConf)
 
 		// Should pass request with valid client cert
-		//nolint:bodyclose
-		_, _ = ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/tyk/certs", Code: 200, ControlRequest: true, AdminAuth: true, Client: clientWithCert,
 		})
 	})
@@ -269,8 +263,7 @@ func TestAPIMutualTLS(t *testing.T) {
 				spec.Proxy.ListenPath = "/"
 			})
 
-			//nolint:bodyclose
-			_, _ = ts.Run(t, test.TestCase{Path: "/", Code: 200, Client: client, Domain: "localhost"})
+			ts.Run(t, test.TestCase{Path: "/", Code: 200, Client: client, Domain: "localhost"})
 		})
 
 		t.Run("MutualTLSCertificate not set", func(t *testing.T) {
@@ -282,8 +275,7 @@ func TestAPIMutualTLS(t *testing.T) {
 				spec.UseMutualTLSAuth = true
 			})
 
-			//nolint:bodyclose
-			_, _ = ts.Run(t, test.TestCase{
+			ts.Run(t, test.TestCase{
 				ErrorMatch: badcertErr,
 				Client:     client,
 				Domain:     "localhost",
@@ -301,8 +293,7 @@ func TestAPIMutualTLS(t *testing.T) {
 				spec.ClientCertificates = []string{clientCertID}
 			})
 
-			//nolint:bodyclose
-			_, _ = ts.Run(t, test.TestCase{
+			ts.Run(t, test.TestCase{
 				Code: 200, Client: client, Domain: "localhost",
 			})
 
@@ -310,8 +301,7 @@ func TestAPIMutualTLS(t *testing.T) {
 			CertificateManager.FlushCache()
 
 			client = GetTLSClient(&clientCert, serverCertPem)
-			//nolint:bodyclose
-			_, _ = ts.Run(t, test.TestCase{
+			ts.Run(t, test.TestCase{
 				Client: client, Domain: "localhost", ErrorMatch: badcertErr,
 			})
 		})
@@ -330,8 +320,7 @@ func TestAPIMutualTLS(t *testing.T) {
 				spec.ClientCertificates = []string{clientCertID2}
 			})
 
-			//nolint:bodyclose
-			_, _ = ts.Run(t, test.TestCase{
+			ts.Run(t, test.TestCase{
 				Client: client, ErrorMatch: badcertErr, Domain: "localhost",
 			})
 		})
@@ -363,8 +352,7 @@ func TestAPIMutualTLS(t *testing.T) {
 				loadAPIS()
 
 				certNotMatchErr := "Client TLS certificate is required"
-				//nolint:bodyclose
-				_, _ = ts.Run(t, []test.TestCase{
+				ts.Run(t, []test.TestCase{
 					{
 						Path:      "/with_mutual",
 						Client:    clientWithoutCert,
@@ -388,8 +376,7 @@ func TestAPIMutualTLS(t *testing.T) {
 
 				certNotAllowedErr := `Certificate with SHA256 ` + certs.HexSHA256(clientCert.Certificate[0]) + ` not allowed`
 
-				//nolint:bodyclose
-				_, _ = ts.Run(t, test.TestCase{
+				ts.Run(t, test.TestCase{
 					Path:      "/with_mutual",
 					Client:    client,
 					Domain:    domain,
@@ -402,8 +389,7 @@ func TestAPIMutualTLS(t *testing.T) {
 				loadAPIS(clientCertID)
 				client := GetTLSClient(&clientCert, serverCertPem)
 
-				//nolint:bodyclose
-				_, _ = ts.Run(t, test.TestCase{
+				ts.Run(t, test.TestCase{
 					Path:   "/with_mutual",
 					Domain: domain,
 					Client: client,
@@ -443,17 +429,13 @@ func TestUpstreamMutualTLS(t *testing.T) {
 	t.Run("Without API", func(t *testing.T) {
 		client := GetTLSClient(&clientCert, nil)
 
-		//nolint:bodyclose
-		_, err := client.Get(upstream.URL)
-		if err == nil {
+		if _, err := client.Get(upstream.URL); err == nil {
 			t.Error("Should reject without certificate")
 		}
 
 		pool.AddCert(clientCert.Leaf)
 
-		//nolint:bodyclose
-		_, err = client.Get(upstream.URL)
-		if err != nil {
+		if _, err := client.Get(upstream.URL); err != nil {
 			t.Error("Should pass with valid certificate")
 		}
 	})
@@ -481,8 +463,7 @@ func TestUpstreamMutualTLS(t *testing.T) {
 		})
 
 		// Should pass with valid upstream certificate
-		//nolint:bodyclose
-		_, _ = ts.Run(t, test.TestCase{Code: 200})
+		ts.Run(t, test.TestCase{Code: 200})
 	})
 
 }
@@ -514,8 +495,7 @@ func TestSSLForceCommonName(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 			spec.Proxy.TargetURL = targetURL
 		})
-		//nolint:bodyclose
-		_, _ = ts.Run(t, test.TestCase{Code: 500, BodyMatch: "There was a problem proxying the request"})
+		ts.Run(t, test.TestCase{Code: 500, BodyMatch: "There was a problem proxying the request"})
 	})
 
 	t.Run("Force Common Name Check is Enabled", func(t *testing.T) {
@@ -533,8 +513,7 @@ func TestSSLForceCommonName(t *testing.T) {
 			spec.Proxy.TargetURL = targetURL
 		})
 
-		//nolint:bodyclose
-		_, _ = ts.Run(t, test.TestCase{Code: 200})
+		ts.Run(t, test.TestCase{Code: 200})
 	})
 }
 
@@ -566,8 +545,7 @@ func TestKeyWithCertificateTLS(t *testing.T) {
 	client := GetTLSClient(&clientCert, nil)
 
 	t.Run("Cert unknown", func(t *testing.T) {
-		//nolint:bodyclose
-		_, _ = ts.Run(t, test.TestCase{Code: 403, Client: client})
+		ts.Run(t, test.TestCase{Code: 403, Client: client})
 	})
 
 	t.Run("Cert known", func(t *testing.T) {
@@ -593,8 +571,7 @@ func TestKeyWithCertificateTLS(t *testing.T) {
 			t.Fatal("Should not allow create key based on the same certificate")
 		}
 
-		resp, _ := ts.Run(t, test.TestCase{Path: "/", Code: 200, Client: client})
-		defer resp.Body.Close()
+		ts.Run(t, test.TestCase{Path: "/", Code: 200, Client: client})
 	})
 }
 
@@ -623,8 +600,7 @@ func TestAPICertificate(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, test.TestCase{Code: 200, Client: client})
-		defer resp.Body.Close()
+		ts.Run(t, test.TestCase{Code: 200, Client: client})
 	})
 
 	t.Run("Cert unknown", func(t *testing.T) {
@@ -633,8 +609,7 @@ func TestAPICertificate(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, test.TestCase{ErrorMatch: "tls: internal error"})
-		defer resp.Body.Close()
+		ts.Run(t, test.TestCase{ErrorMatch: "tls: internal error"})
 	})
 }
 
@@ -649,28 +624,25 @@ func TestCertificateHandlerTLS(t *testing.T) {
 	defer ts.Close()
 
 	t.Run("List certificates, empty", func(t *testing.T) {
-		resp, _ := ts.Run(t, test.TestCase{
+		ts.Run(t, test.TestCase{
 			Path: "/tyk/certs", Code: 200, AdminAuth: true, BodyMatch: `{"certs":null}`,
 		})
-		defer resp.Body.Close()
 	})
 
 	t.Run("Should add certificates with and without private keys", func(t *testing.T) {
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			// Public Certificate
 			{Method: "POST", Path: "/tyk/certs", Data: string(clientPEM), AdminAuth: true, Code: 200, BodyMatch: `"id":"` + clientCertID},
 			// Public + Private
 			{Method: "POST", Path: "/tyk/certs", Data: string(combinedServerPEM), AdminAuth: true, Code: 200, BodyMatch: `"id":"` + serverCertID},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("List certificates, non empty", func(t *testing.T) {
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/tyk/certs", AdminAuth: true, Code: 200, BodyMatch: clientCertID},
 			{Method: "GET", Path: "/tyk/certs", AdminAuth: true, Code: 200, BodyMatch: serverCertID},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	certMetaTemplate := `{"id":"%s","fingerprint":"%s","has_private":%s`
@@ -679,22 +651,20 @@ func TestCertificateHandlerTLS(t *testing.T) {
 		clientCertMeta := fmt.Sprintf(certMetaTemplate, clientCertID, clientCertID, "false")
 		serverCertMeta := fmt.Sprintf(certMetaTemplate, serverCertID, serverCertID, "true")
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/tyk/certs/" + clientCertID, AdminAuth: true, Code: 200, BodyMatch: clientCertMeta},
 			{Method: "GET", Path: "/tyk/certs/" + serverCertID, AdminAuth: true, Code: 200, BodyMatch: serverCertMeta},
 			{Method: "GET", Path: "/tyk/certs/" + serverCertID + "," + clientCertID, AdminAuth: true, Code: 200, BodyMatch: `\[` + serverCertMeta},
 			{Method: "GET", Path: "/tyk/certs/" + serverCertID + "," + clientCertID, AdminAuth: true, Code: 200, BodyMatch: clientCertMeta},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Certificate removal", func(t *testing.T) {
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "DELETE", Path: "/tyk/certs/" + serverCertID, AdminAuth: true, Code: 200},
 			{Method: "DELETE", Path: "/tyk/certs/" + clientCertID, AdminAuth: true, Code: 200},
 			{Method: "GET", Path: "/tyk/certs", AdminAuth: true, Code: 200, BodyMatch: `{"certs":null}`},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 
@@ -727,8 +697,7 @@ func TestCipherSuites(t *testing.T) {
 		}}}
 
 		// If there is an internal TLS error it will fail test
-		resp, _ := ts.Run(t, test.TestCase{Client: client, Path: "/"})
-		defer resp.Body.Close()
+		ts.Run(t, test.TestCase{Client: client, Path: "/"})
 	})
 
 	t.Run("Cipher non-match", func(t *testing.T) {
@@ -738,7 +707,6 @@ func TestCipherSuites(t *testing.T) {
 			InsecureSkipVerify: true,
 		}}}
 
-		resp, _ := ts.Run(t, test.TestCase{Client: client, Path: "/", ErrorMatch: "tls: handshake failure"})
-		defer resp.Body.Close()
+		ts.Run(t, test.TestCase{Client: client, Path: "/", ErrorMatch: "tls: handshake failure"})
 	})
 }

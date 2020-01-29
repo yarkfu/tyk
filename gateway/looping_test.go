@@ -72,7 +72,7 @@ func TestLooping(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "POST", Path: "/xml", Data: postAction, BodyMatch: `"Url":"/post_action`},
 
 			// Should retain original query params
@@ -86,7 +86,6 @@ func TestLooping(t *testing.T) {
 
 			{Method: "POST", Path: "/get_action", Code: 403},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Test multiple url rewrites", func(t *testing.T) {
@@ -124,10 +123,9 @@ func TestLooping(t *testing.T) {
 
 		//addHeaders := map[string]string{"X-Test": "test", "X-Internal": "test"}
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/test", BodyMatch: `"Url":"/upstream"`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Loop to another API", func(t *testing.T) {
@@ -173,13 +171,12 @@ func TestLooping(t *testing.T) {
 			spec.VersionData.Versions["v1"] = version
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Path: "/somesecret", Code: 404},
 			{Path: "/test/by_name", Code: 200, BodyMatch: `"X-Name":"internal"`},
 			{Path: "/test/by_id", Code: 200, BodyMatch: `"X-Name":"internal"`},
 			{Path: "/test/wrong", Code: 500},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("VirtualEndpoint or plugins", func(t *testing.T) {
@@ -203,7 +200,7 @@ func TestLooping(t *testing.T) {
             }
         `, "POST", "/virt", true)
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "POST", Path: "/virt", Data: postAction, BodyMatch: `"Url":"/post_action`},
 
 			// Should retain original query params
@@ -212,7 +209,6 @@ func TestLooping(t *testing.T) {
 			// Should rewrite http method, if loop rewrite param passed
 			{Method: "POST", Path: "/virt", Data: getAction, BodyMatch: `"Method":"GET"`},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Loop limit", func(t *testing.T) {
@@ -234,10 +230,9 @@ func TestLooping(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 		})
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/recursion", Code: 500, BodyMatch: "Loop level too deep. Found more than 2 loops in single request"},
 		}...)
-		defer resp.Body.Close()
 	})
 
 	t.Run("Quota and rate limit calculation", func(t *testing.T) {
@@ -266,10 +261,9 @@ func TestLooping(t *testing.T) {
 
 		authHeaders := map[string]string{"authorization": keyID}
 
-		resp, _ := ts.Run(t, []test.TestCase{
+		ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/recursion", Headers: authHeaders, BodyNotMatch: "Quota exceeded"},
 		}...)
-		defer resp.Body.Close()
 	})
 }
 
@@ -284,8 +278,7 @@ func TestConcurrencyReloads(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func() {
-			resp, _ := ts.Run(t, test.TestCase{Path: "/sample", Code: 200})
-			defer resp.Body.Close()
+			ts.Run(t, test.TestCase{Path: "/sample", Code: 200})
 			wg.Done()
 		}()
 	}
