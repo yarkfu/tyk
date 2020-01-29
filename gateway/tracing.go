@@ -123,7 +123,9 @@ func traceHandler(w http.ResponseWriter, r *http.Request) {
 	chainObj.ThisHandler.ServeHTTP(wr, tr)
 
 	var response string
-	if dump, err := httputil.DumpResponse(wr.Result(), true); err == nil {
+	wrResp := wr.Result()
+	defer wrResp.Body.Close()
+	if dump, err := httputil.DumpResponse(wrResp, true); err == nil {
 		response = string(dump)
 	} else {
 		response = err.Error()

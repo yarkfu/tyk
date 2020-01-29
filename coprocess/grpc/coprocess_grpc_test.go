@@ -255,6 +255,7 @@ func TestGRPCDispatch(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %s", err.Error())
 		}
+		defer res.Body.Close()
 		data, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			t.Fatalf("Couldn't read response body: %s", err.Error())
@@ -298,41 +299,45 @@ func TestGRPCDispatch(t *testing.T) {
 			t.Fatalf("Couldn't close multipart writer: %s", err.Error())
 		}
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Path: "/grpc-test-api-2/", Code: 200, Data: &buf, Headers: map[string]string{"Content-Type": multipartWriter.FormDataContentType()}},
 			{Path: "/grpc-test-api-2/", Code: 200, Data: "{}", Headers: map[string]string{"Content-Type": "application/json"}},
 		}...)
+		defer resp.Body.Close()
 	})
 
 	t.Run("Post Hook with metadata", func(t *testing.T) {
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/grpc-test-api-3/",
 			Method:  http.MethodGet,
 			Code:    http.StatusOK,
 			Headers: headers,
 		})
+		defer resp.Body.Close()
 	})
 
 	t.Run("Post Hook with allowed message length", func(t *testing.T) {
 		s := randStringBytes(20000000)
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/grpc-test-api-3/",
 			Method:  http.MethodGet,
 			Code:    http.StatusOK,
 			Headers: headers,
 			Data:    s,
 		})
+		defer resp.Body.Close()
 	})
 
 	t.Run("Post Hook with with unallowed message length", func(t *testing.T) {
 		s := randStringBytes(150000000)
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/grpc-test-api-3/",
 			Method:  http.MethodGet,
 			Code:    http.StatusInternalServerError,
 			Headers: headers,
 			Data:    s,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -348,12 +353,13 @@ func BenchmarkGRPCDispatch(b *testing.B) {
 		path := "/grpc-test-api/"
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			ts.Run(b, test.TestCase{
+			resp, _ := ts.Run(b, test.TestCase{
 				Path:    path,
 				Method:  http.MethodGet,
 				Code:    http.StatusOK,
 				Headers: headers,
 			})
+			defer resp.Body.Close()
 		}
 	})
 }

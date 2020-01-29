@@ -291,9 +291,11 @@ func HttpHandlerRunner(handler http.HandlerFunc) func(*http.Request, *TestCase) 
 
 func TestHttpHandler(t testing.TB, handle http.HandlerFunc, testCases ...TestCase) {
 	runner := HTTPTestRunner{
+		//nolint:bodyclose
 		Do: HttpHandlerRunner(handle),
 	}
-	runner.Run(t, testCases...)
+	resp, _ := runner.Run(t, testCases...)
+	defer resp.Body.Close()
 }
 
 func HttpServerRequestBuilder(baseURL string) func(tc *TestCase) (*http.Request, error) {
@@ -311,8 +313,10 @@ func HttpServerRunner() func(*http.Request, *TestCase) (*http.Response, error) {
 
 func TestHttpServer(t testing.TB, baseURL string, testCases ...TestCase) {
 	runner := HTTPTestRunner{
+		//nolint:bodyclose
 		Do:             HttpServerRunner(),
 		RequestBuilder: HttpServerRequestBuilder(baseURL),
 	}
-	runner.Run(t, testCases...)
+	resp, _ := runner.Run(t, testCases...)
+	defer resp.Body.Close()
 }

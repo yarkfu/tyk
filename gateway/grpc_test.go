@@ -74,7 +74,14 @@ func TestHTTP2_TLS(t *testing.T) {
 	http2Client := GetTLSClient(&clientCert, serverCertPem)
 	http2.ConfigureTransport(http2Client.Transport.(*http.Transport))
 
-	ts.Run(t, test.TestCase{Client: http2Client, Path: "", Code: 200, Proto: "HTTP/2.0", BodyMatch: "Hello, I am an HTTP/2 Server"})
+	resp, _ := ts.Run(t, test.TestCase{
+		Client:    http2Client,
+		Path:      "",
+		Code:      200,
+		Proto:     "HTTP/2.0",
+		BodyMatch: "Hello, I am an HTTP/2 Server",
+	})
+	defer resp.Body.Close()
 }
 
 func TestGRPC_TLS(t *testing.T) {
@@ -218,9 +225,10 @@ func TestGRPC_BasicAuthentication(t *testing.T) {
 	client := GetTLSClient(nil, nil)
 
 	// To create key
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Method: "POST", Path: "/tyk/keys/defaultuser", Data: session, AdminAuth: true, Code: 200, Client: client},
 	}...)
+	defer resp.Body.Close()
 
 	// gRPC client
 	r := sayHelloWithGRPCClient(t, nil, nil, true, "", address, name)
@@ -276,6 +284,7 @@ func TestGRPC_TokenBasedAuthentication(t *testing.T) {
 	resp, _ := ts.Run(t, []test.TestCase{
 		{Method: "POST", Path: "/tyk/keys/create", Data: session, AdminAuth: true, Code: 200, Client: client},
 	}...)
+	defer resp.Body.Close()
 
 	// Read key
 	body, _ := ioutil.ReadAll(resp.Body)

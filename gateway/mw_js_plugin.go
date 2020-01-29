@@ -275,7 +275,10 @@ func (d *DynamicMiddleware) ProcessRequest(w http.ResponseWriter, r *http.Reques
 			},
 		}
 
-		forceResponse(w, r, &responseObject, d.Spec, session, d.Pre, logger)
+		resp := forceResponse(w, r, &responseObject, d.Spec, session, d.Pre, logger)
+		if resp != nil {
+			resp.Body.Close()
+		}
 		return nil, mwStatusRespond
 	}
 
@@ -526,6 +529,7 @@ func (j *JSVM) LoadTykJSApi() {
 			j.Log.WithError(err).Error("Request failed")
 			return otto.Value{}
 		}
+		defer resp.Body.Close()
 
 		body, _ := ioutil.ReadAll(resp.Body)
 		bodyStr := string(body)

@@ -195,6 +195,7 @@ func TestOauthMultipleAPIs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer resp.Body.Close()
 
 	token := tokenData{}
 	json.NewDecoder(resp.Body).Decode(&token)
@@ -202,7 +203,7 @@ func TestOauthMultipleAPIs(t *testing.T) {
 		"Authorization": "Bearer " + token.AccessToken,
 	}
 
-	ts.Run(t,
+	resp, _ = ts.Run(t,
 		test.TestCase{
 			Path:    "/api1/get",
 			Headers: authHeader,
@@ -216,6 +217,7 @@ func TestOauthMultipleAPIs(t *testing.T) {
 			Code:    http.StatusOK,
 		},
 	)
+	defer resp.Body.Close()
 }
 
 func TestAuthCodeRedirect(t *testing.T) {
@@ -242,12 +244,13 @@ func TestAuthCodeRedirect(t *testing.T) {
 		param.Set("client_id", authClientID)
 		param.Set("state", "random-state-value")
 
-		_, _ = ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:   "/APIID/oauth/authorize/?" + param.Encode(),
 			Method: http.MethodGet,
 			Client: client,
 			Code:   http.StatusTemporaryRedirect,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -281,7 +284,7 @@ func TestAuthCodeRedirectMultipleURL(t *testing.T) {
 			"Content-Type": "application/x-www-form-urlencoded",
 		}
 
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/APIID/oauth/authorize/",
 			Data:    param.Encode(),
 			Headers: headers,
@@ -289,6 +292,7 @@ func TestAuthCodeRedirectMultipleURL(t *testing.T) {
 			Code:    http.StatusTemporaryRedirect,
 			Client:  client,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -316,13 +320,14 @@ func TestAuthCodeRedirectInvalidMultipleURL(t *testing.T) {
 			"Content-Type": "application/x-www-form-urlencoded",
 		}
 
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/APIID/oauth/authorize/",
 			Data:    param.Encode(),
 			Headers: headers,
 			Method:  http.MethodPost,
 			Code:    http.StatusForbidden,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -345,7 +350,7 @@ func TestAPIClientAuthorizeAuthCode(t *testing.T) {
 			"Content-Type": "application/x-www-form-urlencoded",
 		}
 
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:      "/APIID/tyk/oauth/authorize-client/",
 			AdminAuth: true,
 			Data:      param.Encode(),
@@ -354,6 +359,7 @@ func TestAPIClientAuthorizeAuthCode(t *testing.T) {
 			Code:      http.StatusOK,
 			BodyMatch: `"code"`,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -376,7 +382,7 @@ func TestAPIClientAuthorizeToken(t *testing.T) {
 			"Content-Type": "application/x-www-form-urlencoded",
 		}
 
-		_, _ = ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:      "/APIID/tyk/oauth/authorize-client/",
 			AdminAuth: true,
 			Data:      param.Encode(),
@@ -386,6 +392,7 @@ func TestAPIClientAuthorizeToken(t *testing.T) {
 			BodyMatch: `{"access_token":".*","expires_in":3600,"redirect_to":"http://client.oauth.com` +
 				`#access_token=.*=&expires_in=3600&token_type=bearer","token_type":"bearer"}`,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -397,7 +404,7 @@ func TestDeleteOauthClient(t *testing.T) {
 
 	createTestOAuthClient(spec, authClientID)
 
-	var resp *http.Response
+	token := tokenData{}
 
 	t.Run("Client authorize token request", func(t *testing.T) {
 		param := make(url.Values)
@@ -410,8 +417,7 @@ func TestDeleteOauthClient(t *testing.T) {
 			"Content-Type": "application/x-www-form-urlencoded",
 		}
 
-		var err error
-		resp, err = ts.Run(t, test.TestCase{
+		resp, err := ts.Run(t, test.TestCase{
 			Path:      "/APIID/tyk/oauth/authorize-client/",
 			AdminAuth: true,
 			Data:      param.Encode(),
@@ -423,24 +429,25 @@ func TestDeleteOauthClient(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		defer resp.Body.Close()
+		json.NewDecoder(resp.Body).Decode(&token)
 	})
 
-	token := tokenData{}
-	json.NewDecoder(resp.Body).Decode(&token)
 	authHeader := map[string]string{
 		"Authorization": "Bearer " + token.AccessToken,
 	}
 	t.Run("Make request to API with supplying token", func(t *testing.T) {
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/APIID/get",
 			Headers: authHeader,
 			Method:  http.MethodGet,
 			Code:    http.StatusOK,
 		})
+		defer resp.Body.Close()
 	})
 
 	t.Run("Delete OAuth-client and check that it is gone", func(t *testing.T) {
-		ts.Run(t,
+		resp, _ := ts.Run(t,
 			test.TestCase{
 				Path:      "/tyk/oauth/clients/999999/" + authClientID,
 				AdminAuth: true,
@@ -455,10 +462,11 @@ func TestDeleteOauthClient(t *testing.T) {
 				Delay:     1100 * time.Millisecond, // we need this to have deleted oauth client expired in memory cache
 			},
 		)
+		defer resp.Body.Close()
 	})
 
 	t.Run("Make sure token issued for deleted oauth-client cannot be used", func(t *testing.T) {
-		ts.Run(t,
+		resp, _ := ts.Run(t,
 			test.TestCase{
 				Path:    "/APIID/get",
 				Headers: authHeader,
@@ -478,6 +486,7 @@ func TestDeleteOauthClient(t *testing.T) {
 				Code:    http.StatusForbidden,
 			},
 		)
+		defer resp.Body.Close()
 	})
 
 }
@@ -511,6 +520,7 @@ func TestAPIClientAuthorizeTokenWithPolicy(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		defer resp.Body.Close()
 
 		// check response
 		asData := make(map[string]interface{})
@@ -551,10 +561,10 @@ func getAuthCode(t *testing.T, ts *Test) map[string]string {
 		Method:    http.MethodPost,
 		Code:      http.StatusOK,
 	})
-
 	if err != nil {
 		t.Error(err)
 	}
+	defer resp.Body.Close()
 
 	response := map[string]string{}
 	json.NewDecoder(resp.Body).Decode(&response)
@@ -605,6 +615,7 @@ func TestGetPaginatedClientTokens(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
+			defer resp.Body.Close()
 
 			response := map[string]interface{}{}
 			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -626,6 +637,7 @@ func TestGetPaginatedClientTokens(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		defer resp.Body.Close()
 
 		tokensResp := paginatedOAuthClientTokens{}
 		if err := json.NewDecoder(resp.Body).Decode(&tokensResp); err != nil {
@@ -726,6 +738,7 @@ func testGetClientTokens(t *testing.T, hashed bool) {
 			if err != nil {
 				t.Error(err)
 			}
+			defer resp.Body.Close()
 
 			response := map[string]interface{}{}
 			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -752,6 +765,7 @@ func testGetClientTokens(t *testing.T, hashed bool) {
 		if err != nil {
 			t.Error(err)
 		}
+		defer resp.Body.Close()
 
 		tokensResp := []OAuthClientToken{}
 		if err := json.NewDecoder(resp.Body).Decode(&tokensResp); err != nil {
@@ -783,6 +797,7 @@ func testGetClientTokens(t *testing.T, hashed bool) {
 		if err != nil {
 			t.Error(err)
 		}
+		defer resp.Body.Close()
 
 		// check response
 		tokensResp := []OAuthClientToken{}
@@ -821,10 +836,10 @@ func getToken(t *testing.T, ts *Test) tokenData {
 		Method:  http.MethodPost,
 		Code:    http.StatusOK,
 	})
-
 	if err != nil {
 		t.Error(err)
 	}
+	defer resp.Body.Close()
 
 	response := tokenData{}
 	json.NewDecoder(resp.Body).Decode(&response)
@@ -860,6 +875,7 @@ func TestOAuthClientCredsGrant(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		defer resp.Body.Close()
 
 		// check response content
 		response := tokenData{}
@@ -892,13 +908,14 @@ func TestClientAccessRequest(t *testing.T) {
 			"Authorization": "Basic MTIzNDphYWJiY2NkZA==",
 		}
 
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/APIID/oauth/token/",
 			Data:    param.Encode(),
 			Headers: headers,
 			Method:  http.MethodPost,
 			Code:    http.StatusOK,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -926,6 +943,7 @@ func TestOAuthAPIRefreshInvalidate(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		defer resp.Body.Close()
 
 		newSuccess := apiModifyKeySuccess{}
 		json.NewDecoder(resp.Body).Decode(&newSuccess)
@@ -949,13 +967,14 @@ func TestOAuthAPIRefreshInvalidate(t *testing.T) {
 			"Content-Type":  "application/x-www-form-urlencoded",
 			"Authorization": "Basic MTIzNDphYWJiY2NkZA==",
 		}
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/APIID/oauth/token/",
 			Data:    param.Encode(),
 			Headers: headers,
 			Method:  http.MethodPost,
 			Code:    http.StatusForbidden,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -981,13 +1000,14 @@ func TestClientRefreshRequest(t *testing.T) {
 			"Authorization": "Basic MTIzNDphYWJiY2NkZA==",
 		}
 
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/APIID/oauth/token/",
 			Data:    param.Encode(),
 			Headers: headers,
 			Method:  http.MethodPost,
 			Code:    http.StatusOK,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -1025,6 +1045,7 @@ func TestClientRefreshRequestDouble(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		defer resp.Body.Close()
 		responseData := make(map[string]interface{})
 		json.NewDecoder(resp.Body).Decode(&responseData)
 		var ok bool
@@ -1042,13 +1063,14 @@ func TestClientRefreshRequestDouble(t *testing.T) {
 		param.Set("client_id", authClientID)
 		param.Set("refresh_token", token)
 
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path:    "/APIID/oauth/token/",
 			Data:    param.Encode(),
 			Headers: headers,
 			Method:  http.MethodPost,
 			Code:    http.StatusOK,
 		})
+		defer resp.Body.Close()
 	})
 }
 
@@ -1079,7 +1101,7 @@ func TestTokenEndpointHeaders(t *testing.T) {
 		"Expires":                   "0",
 	}
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{
 			Path:         "/APIID/oauth/token/",
 			Data:         param.Encode(),
@@ -1094,6 +1116,7 @@ func TestTokenEndpointHeaders(t *testing.T) {
 			Code:         http.StatusForbidden,
 			HeadersMatch: securityAndCacheHeaders,
 		}}...)
+	defer resp.Body.Close()
 }
 
 func TestJSONToFormValues(t *testing.T) {

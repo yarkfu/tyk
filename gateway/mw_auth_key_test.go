@@ -41,11 +41,12 @@ func TestMurmur3CharBug(t *testing.T) {
 
 		key := CreateSession()
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			genTestCase("wrong", 403),
 			genTestCase(key+"abc", 403),
 			genTestCase(key, 200),
 		}...)
+		defer resp.Body.Close()
 	})
 
 	t.Run("murmur32 hashing, legacy", func(t *testing.T) {
@@ -58,11 +59,12 @@ func TestMurmur3CharBug(t *testing.T) {
 
 		key := CreateSession()
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			genTestCase("wrong", 403),
 			genTestCase(key+"abc", 403),
 			genTestCase(key, 200),
 		}...)
+		defer resp.Body.Close()
 	})
 
 	t.Run("murmur32 hashing, json keys", func(t *testing.T) {
@@ -75,12 +77,13 @@ func TestMurmur3CharBug(t *testing.T) {
 
 		key := CreateSession()
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			genTestCase("wrong", 403),
 			// Should reject instead, just to show bug
 			genTestCase(key+"abc", 200),
 			genTestCase(key, 200),
 		}...)
+		defer resp.Body.Close()
 	})
 
 	t.Run("murmur64 hashing", func(t *testing.T) {
@@ -93,12 +96,13 @@ func TestMurmur3CharBug(t *testing.T) {
 
 		key := CreateSession()
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			genTestCase("wrong", 403),
 			// New hashing fixes the bug
 			genTestCase(key+"abc", 403),
 			genTestCase(key, 200),
 		}...)
+		defer resp.Body.Close()
 	})
 }
 
@@ -139,11 +143,12 @@ func TestSignatureValidation(t *testing.T) {
 			"authorization": key,
 		}
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Headers: emptySigHeader, Code: 401},
 			{Headers: invalidSigHeader, Code: 401},
 			{Headers: validSigHeader, Code: 200},
 		}...)
+		defer resp.Body.Close()
 	})
 
 	t.Run("Dynamic signature", func(t *testing.T) {
@@ -169,10 +174,11 @@ func TestSignatureValidation(t *testing.T) {
 			"signature":     "junk",
 		}
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Headers: invalidSigHeader, Code: 401},
 			{Headers: validSigHeader, Code: 200},
 		}...)
+		defer resp.Body.Close()
 	})
 }
 

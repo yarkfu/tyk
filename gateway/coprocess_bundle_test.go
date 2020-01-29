@@ -171,7 +171,7 @@ func TestResponseOverride(t *testing.T) {
 
 		time.Sleep(1 * time.Second)
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Path: "/test/?status=200", Code: 200, BodyMatch: customError, HeadersMatch: customHeader},
 			{Path: "/test/?status=200&response_body=true", Code: 200, BodyMatch: customBody, HeadersMatch: customHeader},
 			{Path: "/test/?status=400", Code: 400, BodyMatch: `"error": "`, HeadersMatch: customHeader},
@@ -181,6 +181,7 @@ func TestResponseOverride(t *testing.T) {
 			{Path: "/test/?status=400&override=true&response_body=true", Code: 400, BodyMatch: customBody, HeadersMatch: customHeader},
 			{Path: "/test/?status=401&override=true", Code: 401, BodyMatch: customError, HeadersMatch: customHeader},
 		}...)
+		defer resp.Body.Close()
 	}
 	t.Run("Python", func(t *testing.T) {
 		t.Skip("TODO(jlucktay): re-enable this test later")

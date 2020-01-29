@@ -648,13 +648,14 @@ func TestApplyPoliciesQuotaAPILimit(t *testing.T) {
 
 	// create key
 	key := uuid.New()
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Method: http.MethodPost, Path: "/tyk/keys/" + key, Data: session, AdminAuth: true, Code: 200},
 	}...)
+	defer resp.Body.Close()
 
 	// run requests to different APIs
 	authHeader := map[string]string{"Authorization": key}
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		// 2 requests to api1, API limit quota remaining should be 98
 		{Method: http.MethodGet, Path: "/api1", Headers: authHeader, Code: http.StatusOK,
 			HeadersMatch: map[string]string{headers.XRateLimitRemaining: "99"}},
@@ -679,9 +680,10 @@ func TestApplyPoliciesQuotaAPILimit(t *testing.T) {
 		{Method: http.MethodGet, Path: "/api3", Headers: authHeader, Code: http.StatusOK,
 			HeadersMatch: map[string]string{headers.XRateLimitRemaining: "45"}},
 	}...)
+	defer resp.Body.Close()
 
 	// check key session
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		{
 			Method:    http.MethodGet,
 			Path:      "/tyk/keys/" + key,
@@ -749,9 +751,10 @@ func TestApplyPoliciesQuotaAPILimit(t *testing.T) {
 			},
 		},
 	}...)
+	defer resp.Body.Close()
 
 	// Reset quota
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		{
 			Method:    http.MethodPut,
 			Path:      "/tyk/keys/" + key,
@@ -785,6 +788,7 @@ func TestApplyPoliciesQuotaAPILimit(t *testing.T) {
 			},
 		},
 	}...)
+	defer resp.Body.Close()
 }
 
 func TestApplyMultiPolicies(t *testing.T) {
@@ -862,13 +866,14 @@ func TestApplyMultiPolicies(t *testing.T) {
 
 	// create key
 	key := uuid.New()
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Method: http.MethodPost, Path: "/tyk/keys/" + key, Data: session, AdminAuth: true, Code: 200},
 	}...)
+	defer resp.Body.Close()
 
 	// run requests to different APIs
 	authHeader := map[string]string{"Authorization": key}
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		// 2 requests to api1, API limit quota remaining should be 48
 		{Path: "/api1", Headers: authHeader, Code: http.StatusOK,
 			HeadersMatch: map[string]string{headers.XRateLimitRemaining: "49"}},
@@ -891,9 +896,10 @@ func TestApplyMultiPolicies(t *testing.T) {
 		{Path: "/api3", Headers: authHeader, Code: http.StatusOK,
 			HeadersMatch: map[string]string{headers.XRateLimitRemaining: "94"}},
 	}...)
+	defer resp.Body.Close()
 
 	// check key session
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		{
 			Method:    http.MethodGet,
 			Path:      "/tyk/keys/" + key,
@@ -929,9 +935,10 @@ func TestApplyMultiPolicies(t *testing.T) {
 			},
 		},
 	}...)
+	defer resp.Body.Close()
 
 	// Reset quota
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		{
 			Method:    http.MethodPut,
 			Path:      "/tyk/keys/" + key,
@@ -956,15 +963,17 @@ func TestApplyMultiPolicies(t *testing.T) {
 			},
 		},
 	}...)
+	defer resp.Body.Close()
 
 	// Rate limits before
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		// 2 requests to api1, API limit quota remaining should be 48
 		{Path: "/api1", Headers: authHeader, Code: http.StatusOK,
 			HeadersMatch: map[string]string{headers.XRateLimitRemaining: "49"}},
 		{Path: "/api1", Headers: authHeader, Code: http.StatusOK,
 			HeadersMatch: map[string]string{headers.XRateLimitRemaining: "48"}},
 	}...)
+	defer resp.Body.Close()
 
 	policiesMu.RLock()
 	policy1.Rate = 1
@@ -979,12 +988,12 @@ func TestApplyMultiPolicies(t *testing.T) {
 	policiesMu.RUnlock()
 
 	// Rate limits after policy update
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		{Path: "/api1", Headers: authHeader, Code: http.StatusOK,
 			HeadersMatch: map[string]string{headers.XRateLimitRemaining: "47"}},
 		{Path: "/api1", Headers: authHeader, Code: http.StatusTooManyRequests},
 	}...)
-
+	defer resp.Body.Close()
 }
 
 func TestPerAPIPolicyUpdate(t *testing.T) {
@@ -1051,12 +1060,13 @@ func TestPerAPIPolicyUpdate(t *testing.T) {
 
 	// create key
 	key := uuid.New()
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Method: http.MethodPost, Path: "/tyk/keys/" + key, Data: session, AdminAuth: true, Code: 200},
 	}...)
+	defer resp.Body.Close()
 
 	// check key session
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		{
 			Method:    http.MethodGet,
 			Path:      "/tyk/keys/" + key + "?api_id=api1",
@@ -1084,6 +1094,7 @@ func TestPerAPIPolicyUpdate(t *testing.T) {
 			},
 		},
 	}...)
+	defer resp.Body.Close()
 
 	//Update policy
 	policiesMu.RLock()
@@ -1107,7 +1118,7 @@ func TestPerAPIPolicyUpdate(t *testing.T) {
 	}
 	policiesMu.RUnlock()
 
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		{
 			Method:    http.MethodGet,
 			Path:      "/tyk/keys/" + key + "?api_id=api1",
@@ -1134,4 +1145,5 @@ func TestPerAPIPolicyUpdate(t *testing.T) {
 			},
 		},
 	}...)
+	defer resp.Body.Close()
 }

@@ -37,12 +37,13 @@ func TestContextVarsMiddleware(t *testing.T) {
 
 	testPrepareContextVarsMiddleware()
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Path: "/test/path", Code: 200, BodyMatch: `"X-Remote-Addr":"127.0.0.1"`},
 		{Path: "/test/path", Code: 200, BodyMatch: `"X-Path":"/test/path"`},
 		{Path: "/test/path", Code: 200, BodyMatch: `"X-Static":"foo"`},
 		{Path: "/test/path", Code: 200, BodyMatch: `"X-Request-Id":"`},
 	}...)
+	defer resp.Body.Close()
 }
 
 func BenchmarkContextVarsMiddleware(b *testing.B) {
@@ -54,12 +55,13 @@ func BenchmarkContextVarsMiddleware(b *testing.B) {
 	testPrepareContextVarsMiddleware()
 
 	for i := 0; i < b.N; i++ {
-		ts.Run(b, []test.TestCase{
+		resp, _ := ts.Run(b, []test.TestCase{
 			{Path: "/test/path", Code: 200, BodyMatch: `"X-Remote-Addr":"127.0.0.1"`},
 			{Path: "/test/path", Code: 200, BodyMatch: `"X-Path":"/test/path"`},
 			{Path: "/test/path", Code: 200, BodyMatch: `"X-Static":"foo"`},
 			{Path: "/test/path", Code: 200, BodyMatch: `"X-Request-Id":"`},
 		}...)
+		defer resp.Body.Close()
 	}
 }
 

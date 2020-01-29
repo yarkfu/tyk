@@ -48,7 +48,7 @@ func TestBasicAuth(t *testing.T) {
 	wrongFormat := map[string]string{"Authorization": genAuthHeader("user", "password:more")}
 	malformed := map[string]string{"Authorization": "not base64"}
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		// Create base auth based key
 		{Method: "POST", Path: "/tyk/keys/defaultuser", Data: session, AdminAuth: true, Code: 200},
 		{Method: "GET", Path: "/", Code: 401, BodyMatch: `Authorization field missing`},
@@ -57,6 +57,7 @@ func TestBasicAuth(t *testing.T) {
 		{Method: "GET", Path: "/", Headers: wrongFormat, Code: 400, BodyMatch: `Attempted access with malformed header, values not in basic auth format`},
 		{Method: "GET", Path: "/", Headers: malformed, Code: 400, BodyMatch: `Attempted access with malformed header, auth data not encoded correctly`},
 	}...)
+	defer resp.Body.Close()
 }
 
 func TestBasicAuthFromBody(t *testing.T) {
@@ -84,7 +85,7 @@ func TestBasicAuthFromBody(t *testing.T) {
 	malformed := `<User>User>`
 	emptyAuthHeader := map[string]string{"Www-Authenticate": ""}
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		// Create base auth based key
 		{Method: "POST", Path: "/tyk/keys/defaultuser", Data: session, AdminAuth: true, Code: 200},
 		{Method: "POST", Path: "/", Code: 400, BodyMatch: `Body do not contain username`},
@@ -93,6 +94,7 @@ func TestBasicAuthFromBody(t *testing.T) {
 		{Method: "POST", Path: "/", Data: withoutPassword, Code: 400, BodyMatch: `Body do not contain password`},
 		{Method: "GET", Path: "/", Data: malformed, Code: 400, BodyMatch: `Body do not contain username`},
 	}...)
+	defer resp.Body.Close()
 }
 
 func TestBasicAuthLegacyWithHashFunc(t *testing.T) {
@@ -113,20 +115,22 @@ func TestBasicAuthLegacyWithHashFunc(t *testing.T) {
 
 	validPassword := map[string]string{"Authorization": genAuthHeader("user", "password")}
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		// Create base auth based key
 		{Method: "POST", Path: "/tyk/keys/defaultuser", Data: session, AdminAuth: true, Code: 200},
 		{Method: "GET", Path: "/", Headers: validPassword, Code: 200},
 	}...)
+	defer resp.Body.Close()
 
 	// set custom hashing function and check if we still do BA session auth with legacy key format
 	globalConf.HashKeyFunction = storage.HashMurmur64
 	config.SetGlobal(globalConf)
 
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		// Create base auth based key
 		{Method: "GET", Path: "/", Headers: validPassword, Code: 200},
 	}...)
+	defer resp.Body.Close()
 }
 
 func TestBasicAuthCachedUserCollision(t *testing.T) {
@@ -151,7 +155,7 @@ func TestBasicAuthCachedUserCollision(t *testing.T) {
 	add2 := map[string]string{"Authorization": genAuthHeader("bellbell12", "password")}
 	add3 := map[string]string{"Authorization": genAuthHeader("bellbell13", "password")}
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		// Create base auth based key
 		{Method: "POST", Path: "/tyk/keys/bellbell1", Data: session, AdminAuth: true, Code: http.StatusOK},
 		{Method: "GET", Path: "/", Headers: correct, Code: http.StatusOK},
@@ -165,6 +169,7 @@ func TestBasicAuthCachedUserCollision(t *testing.T) {
 		{Method: "GET", Path: "/", Headers: add3, Code: http.StatusUnauthorized},
 		{Method: "GET", Path: "/", Headers: correct, Code: http.StatusOK},
 	}...)
+	defer resp.Body.Close()
 }
 
 func TestBasicAuthCachedPasswordCollision(t *testing.T) {
@@ -185,7 +190,7 @@ func TestBasicAuthCachedPasswordCollision(t *testing.T) {
 		t.Run(fmt.Sprintf("Cache disabled:%v", useCache), func(t *testing.T) {
 			session := testPrepareBasicAuth(useCache)
 
-			ts.Run(t, []test.TestCase{
+			resp, _ := ts.Run(t, []test.TestCase{
 				// Create base auth based key
 				{Method: "POST", Path: "/tyk/keys/bellbell1", Data: session, AdminAuth: true, Code: http.StatusOK},
 				{Method: "GET", Path: "/", Headers: correct, Code: http.StatusOK},
@@ -199,6 +204,7 @@ func TestBasicAuthCachedPasswordCollision(t *testing.T) {
 				{Method: "GET", Path: "/", Headers: add3, Code: http.StatusUnauthorized},
 				{Method: "GET", Path: "/", Headers: correct, Code: http.StatusOK},
 			}...)
+			defer resp.Body.Close()
 		})
 	}
 }
@@ -217,22 +223,24 @@ func BenchmarkBasicAuth(b *testing.B) {
 	malformed := map[string]string{"Authorization": "not base64"}
 
 	// Create base auth based key
-	ts.Run(b, test.TestCase{
+	resp, _ := ts.Run(b, test.TestCase{
 		Method:    "POST",
 		Path:      "/tyk/keys/defaultuser",
 		Data:      session,
 		AdminAuth: true,
 		Code:      200,
 	})
+	defer resp.Body.Close()
 
 	for i := 0; i < b.N; i++ {
-		ts.Run(b, []test.TestCase{
+		resp, _ := ts.Run(b, []test.TestCase{
 			{Method: "GET", Path: "/", Code: 401, BodyMatch: `Authorization field missing`},
 			{Method: "GET", Path: "/", Headers: validPassword, Code: 200},
 			{Method: "GET", Path: "/", Headers: wrongPassword, Code: 401},
 			{Method: "GET", Path: "/", Headers: wrongFormat, Code: 400, BodyMatch: `Attempted access with malformed header, values not in basic auth format`},
 			{Method: "GET", Path: "/", Headers: malformed, Code: 400, BodyMatch: `Attempted access with malformed header, auth data not encoded correctly`},
 		}...)
+		defer resp.Body.Close()
 	}
 }
 
@@ -247,18 +255,20 @@ func BenchmarkBasicAuth_CacheEnabled(b *testing.B) {
 	validPassword := map[string]string{"Authorization": genAuthHeader("user", "password")}
 
 	// Create base auth based key
-	ts.Run(b, test.TestCase{
+	resp, _ := ts.Run(b, test.TestCase{
 		Method:    "POST",
 		Path:      "/tyk/keys/defaultuser",
 		Data:      session,
 		AdminAuth: true,
 		Code:      200,
 	})
+	defer resp.Body.Close()
 
 	for i := 0; i < b.N; i++ {
-		ts.Run(b, []test.TestCase{
+		resp, _ := ts.Run(b, []test.TestCase{
 			{Method: "GET", Path: "/", Headers: validPassword, Code: 200},
 		}...)
+		defer resp.Body.Close()
 	}
 }
 
@@ -273,17 +283,19 @@ func BenchmarkBasicAuth_CacheDisabled(b *testing.B) {
 	validPassword := map[string]string{"Authorization": genAuthHeader("user", "password")}
 
 	// Create base auth based key
-	ts.Run(b, test.TestCase{
+	resp, _ := ts.Run(b, test.TestCase{
 		Method:    "POST",
 		Path:      "/tyk/keys/defaultuser",
 		Data:      session,
 		AdminAuth: true,
 		Code:      200,
 	})
+	defer resp.Body.Close()
 
 	for i := 0; i < b.N; i++ {
-		ts.Run(b, []test.TestCase{
+		resp, _ := ts.Run(b, []test.TestCase{
 			{Method: "GET", Path: "/", Headers: validPassword, Code: 200},
 		}...)
+		defer resp.Body.Close()
 	}
 }

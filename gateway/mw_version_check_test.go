@@ -106,7 +106,7 @@ func TestVersioning(t *testing.T) {
 		"version":       "v2",
 	}
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Path: "/", Code: 403, Headers: wrongVersionHeaders, BodyMatch: "This API version does not seem to exist"},
 		{Path: "/", Code: 403, Headers: disallowedAccessHeaders, BodyMatch: "Access to this API has been disallowed"},
 		{Path: "/", Code: 200, Headers: knownVersionHeaders},
@@ -114,6 +114,7 @@ func TestVersioning(t *testing.T) {
 		{Path: "/mock", Code: 200, Headers: mockVersionHeaders, BodyMatch: "testbody", HeadersMatch: map[string]string{"testheader": "testvalue"}},
 		{Path: "/ignore", Code: 200, Headers: mockVersionHeaders},
 	}...)
+	defer resp.Body.Close()
 }
 
 func BenchmarkVersioning(b *testing.B) {
@@ -148,7 +149,7 @@ func BenchmarkVersioning(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		ts.Run(b, []test.TestCase{
+		resp, _ := ts.Run(b, []test.TestCase{
 			{Path: "/", Code: 403, Headers: wrongVersionHeaders, BodyMatch: "This API version does not seem to exist"},
 			{Path: "/", Code: 403, Headers: disallowedAccessHeaders, BodyMatch: "Access to this API has been disallowed"},
 			{Path: "/", Code: 200, Headers: knownVersionHeaders},
@@ -156,6 +157,7 @@ func BenchmarkVersioning(b *testing.B) {
 			{Path: "/mock", Code: 200, Headers: mockVersionHeaders, BodyMatch: "testbody", HeadersMatch: map[string]string{"testheader": "testvalue"}},
 			{Path: "/ignore", Code: 200, Headers: mockVersionHeaders},
 		}...)
+		defer resp.Body.Close()
 	}
 }
 
@@ -174,13 +176,15 @@ func TestNotVersioned(t *testing.T) {
 
 	t.Run("Versioning enabled, override target URL", func(t *testing.T) {
 		LoadAPI(api)
-		_, _ = g.Run(t, test.TestCase{Code: http.StatusInternalServerError})
+		resp, _ := g.Run(t, test.TestCase{Code: http.StatusInternalServerError})
+		defer resp.Body.Close()
 	})
 
 	t.Run("Versioning disabled, use original target URL", func(t *testing.T) {
 		api.VersionData.NotVersioned = true
 		LoadAPI(api)
 
-		_, _ = g.Run(t, test.TestCase{Code: http.StatusOK})
+		resp, _ := g.Run(t, test.TestCase{Code: http.StatusOK})
+		defer resp.Body.Close()
 	})
 }

@@ -63,7 +63,7 @@ func TestVirtualEndpoint(t *testing.T) {
 
 	testPrepareVirtualEndpoint(virtTestJS, "GET", "/virt", true)
 
-	ts.Run(t, test.TestCase{
+	resp, _ := ts.Run(t, test.TestCase{
 		Path:      "/virt",
 		Code:      202,
 		BodyMatch: "foobar",
@@ -72,6 +72,7 @@ func TestVirtualEndpoint(t *testing.T) {
 			"data-bar-y": "3",
 		},
 	})
+	defer resp.Body.Close()
 }
 
 func TestVirtualEndpoint500(t *testing.T) {
@@ -80,10 +81,11 @@ func TestVirtualEndpoint500(t *testing.T) {
 
 	testPrepareVirtualEndpoint("abc", "GET", "/abc", false)
 
-	ts.Run(t, test.TestCase{
+	resp, _ := ts.Run(t, test.TestCase{
 		Path: "/abc",
 		Code: http.StatusInternalServerError,
 	})
+	defer resp.Body.Close()
 }
 
 func BenchmarkVirtualEndpoint(b *testing.B) {
@@ -95,7 +97,7 @@ func BenchmarkVirtualEndpoint(b *testing.B) {
 	testPrepareVirtualEndpoint(virtTestJS, "GET", "/virt", true)
 
 	for i := 0; i < b.N; i++ {
-		ts.Run(b, test.TestCase{
+		resp, _ := ts.Run(b, test.TestCase{
 			Path:      "/virt",
 			Code:      202,
 			BodyMatch: "foobar",
@@ -104,5 +106,6 @@ func BenchmarkVirtualEndpoint(b *testing.B) {
 				"data-bar-y": "3",
 			},
 		})
+		defer resp.Body.Close()
 	}
 }

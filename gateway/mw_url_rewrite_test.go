@@ -1194,9 +1194,10 @@ func TestURLRewriteCaseSensitivity(t *testing.T) {
 			})
 		})
 
-		ts.Run(t, test.TestCase{
+		resp, _ := ts.Run(t, test.TestCase{
 			Path: requestedPath, Code: 200, BodyMatch: bodyMatch,
 		})
+		defer resp.Body.Close()
 	}
 
 	// Matches and rewrites

@@ -235,9 +235,10 @@ func TestSyncAPISpecsRPCSuccess(t *testing.T) {
 		}
 
 		authHeaders := map[string]string{"Authorization": "test"}
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Path: "/sample", Headers: authHeaders, Code: 200},
 		}...)
+		defer resp.Body.Close()
 
 		count, _ := syncAPISpecs()
 		if count != 1 {
@@ -270,10 +271,11 @@ func TestSyncAPISpecsRPCSuccess(t *testing.T) {
 		cachedAuth := map[string]string{"Authorization": "test"}
 		notCachedAuth := map[string]string{"Authorization": "nope1"}
 		// Stil works, since it knows about cached key
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Path: "/sample", Headers: cachedAuth, Code: 200},
 			{Path: "/sample", Headers: notCachedAuth, Code: 403},
 		}...)
+		defer resp.Body.Close()
 
 		stopRPCMock(nil)
 	})
@@ -307,10 +309,11 @@ func TestSyncAPISpecsRPCSuccess(t *testing.T) {
 
 		cachedAuth := map[string]string{"Authorization": "test"}
 		notCachedAuth := map[string]string{"Authorization": "nope2"}
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Path: "/sample", Headers: cachedAuth, Code: 200},
 			{Path: "/sample", Headers: notCachedAuth, Code: 200},
 		}...)
+		defer resp.Body.Close()
 
 		if count, _ := syncAPISpecs(); count != 2 {
 			t.Error("Should fetch latest specs", count)
@@ -329,19 +332,21 @@ func TestSyncAPISpecsRPCSuccess(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		authHeaders := map[string]string{"Authorization": "test"}
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Path: "/sample", Headers: authHeaders, Code: 200},
 		}...)
+		defer resp.Body.Close()
 
 		rpc.Listener.Close()
 		rpc.Stop()
 
 		cached := map[string]string{"Authorization": "test"}
 		notCached := map[string]string{"Authorization": "nope3"}
-		ts.Run(t, []test.TestCase{
+		resp, _ = ts.Run(t, []test.TestCase{
 			{Path: "/sample", Headers: cached, Code: 200},
 			{Path: "/sample", Headers: notCached, Code: 403},
 		}...)
+		defer resp.Body.Close()
 
 		// Dynamically restart RPC layer
 		rpc = gorpc.NewTCPServer(rpc.Listener.(*customListener).L.Addr().String(), dispatcher.NewHandlerFunc())
@@ -357,8 +362,9 @@ func TestSyncAPISpecsRPCSuccess(t *testing.T) {
 		time.Sleep(1000 * time.Millisecond)
 
 		notCached = map[string]string{"Authorization": "nope4"}
-		ts.Run(t, []test.TestCase{
+		resp, _ = ts.Run(t, []test.TestCase{
 			{Path: "/sample", Headers: notCached, Code: 200},
 		}...)
+		defer resp.Body.Close()
 	})
 }

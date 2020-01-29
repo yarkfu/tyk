@@ -155,7 +155,9 @@ func (m *GoPluginMiddleware) ProcessRequest(w http.ResponseWriter, r *http.Reque
 			m.logger.WithError(err).Error("Failed to process request with Go-plugin middleware func")
 		} else {
 			// record 2XX to analytics
-			m.successHandler.RecordHit(r, Latency{Total: int64(ms)}, rw.statusCodeSent, rw.getHttpResponse(r))
+			resp := rw.getHttpResponse(r)
+			defer resp.Body.Close()
+			m.successHandler.RecordHit(r, Latency{Total: int64(ms)}, rw.statusCodeSent, resp)
 
 			// no need to continue passing this request down to reverse proxy
 			respCode = mwStatusRespond

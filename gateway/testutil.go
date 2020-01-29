@@ -280,7 +280,8 @@ func ProxyHandler(p *ReverseProxy, apiSpec *APISpec) http.Handler {
 		baseMid := BaseMiddleware{Spec: apiSpec, Proxy: p}
 		handler := SuccessHandler{baseMid}
 		// Skip all other execution
-		handler.ServeHTTP(w, r)
+		resp := handler.ServeHTTP(w, r)
+		defer resp.Body.Close()
 	})
 }
 
@@ -628,6 +629,7 @@ func (s *Test) Start() {
 
 			return r, err
 		},
+		//nolint:bodyclose
 		Do: test.HttpServerRunner(),
 	}
 }
@@ -656,7 +658,9 @@ func (s *Test) Run(t testing.TB, testCases ...test.TestCase) (*http.Response, er
 
 //TODO:(gernest) when hot reload is suppored enable this.
 func (s *Test) RunExt(t testing.TB, testCases ...test.TestCase) {
-	s.Run(t, testCases...)
+	resp, _ := s.Run(t, testCases...)
+	defer resp.Body.Close()
+
 	var testMatrix = []struct {
 		goagain          bool
 		overrideDefaults bool
@@ -678,7 +682,8 @@ func (s *Test) RunExt(t testing.TB, testCases ...test.TestCase) {
 
 		title := fmt.Sprintf("hotReload: %v, overrideDefaults: %v", m.goagain, m.overrideDefaults)
 		t.(*testing.T).Run(title, func(t *testing.T) {
-			s.Run(t, testCases...)
+			resp, _ := s.Run(t, testCases...)
+			defer resp.Body.Close()
 		})
 	}
 }
@@ -720,11 +725,11 @@ func (s *Test) CreateSession(sGen ...func(s *user.SessionState)) (*user.SessionS
 		Client:    client,
 		AdminAuth: true,
 	})
-
 	if err != nil {
 		log.Fatal("Error while creating session:", err)
 		return nil, ""
 	}
+	defer resp.Body.Close()
 
 	keySuccess := apiModifyKeySuccess{}
 	err = json.NewDecoder(resp.Body).Decode(&keySuccess)

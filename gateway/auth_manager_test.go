@@ -35,11 +35,12 @@ func TestAuthenticationAfterDeleteKey(t *testing.T) {
 			"authorization": key,
 		}
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Path: "/get", Headers: authHeader, Code: http.StatusOK},
 			{Method: http.MethodDelete, Path: deletePath, AdminAuth: true, Code: http.StatusOK, BodyMatch: `"action":"deleted"`},
 			{Path: "/get", Headers: authHeader, Code: http.StatusForbidden},
 		}...)
+		defer resp.Body.Close()
 	}
 
 	t.Run("HashKeys=false", func(t *testing.T) {
@@ -78,7 +79,8 @@ func TestAuthenticationAfterUpdateKey(t *testing.T) {
 			"authorization": key,
 		}
 
-		ts.Run(t, []test.TestCase{
+		//nolint:bodyclose
+		_, _ = ts.Run(t, []test.TestCase{
 			{Path: "/get", Headers: authHeader, Code: http.StatusOK},
 		}...)
 
@@ -88,10 +90,10 @@ func TestAuthenticationAfterUpdateKey(t *testing.T) {
 
 		FallbackKeySesionManager.UpdateSession(storage.HashKey(key), session, 0, config.Global().HashKeys)
 
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Path: "/get", Headers: authHeader, Code: http.StatusForbidden},
 		}...)
-
+		defer resp.Body.Close()
 	}
 
 	t.Run("HashKeys=false", func(t *testing.T) {

@@ -48,13 +48,14 @@ func TestBatch(t *testing.T) {
 		spec.EnableBatchRequestSupport = true
 	})
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Method: "POST", Path: "/v1/tyk/batch/", Data: `{"requests":[]}`, Code: 200, BodyMatch: `\[\]`},
 		{Method: "POST", Path: "/v1/tyk/batch/", Data: "malformed", Code: 400},
 		{Method: "POST", Path: "/v1/tyk/batch/", Data: testBatchRequest, Code: 200},
 	}...)
+	defer resp.Body.Close()
 
-	resp, _ := ts.Do(test.TestCase{Method: "POST", Path: "/v1/tyk/batch/", Data: testBatchRequest})
+	resp, _ = ts.Do(test.TestCase{Method: "POST", Path: "/v1/tyk/batch/", Data: testBatchRequest})
 	if resp != nil {
 		body, _ := ioutil.ReadAll(resp.Body)
 		defer resp.Body.Close()
@@ -171,7 +172,8 @@ func TestVirtualEndpointBatch(t *testing.T) {
 		globalConf.ProxySSLInsecureSkipVerify = true
 		config.SetGlobal(globalConf)
 
-		ts.Run(t, test.TestCase{Path: "/virt", Code: 202})
+		resp, _ := ts.Run(t, test.TestCase{Path: "/virt", Code: 202})
+		defer resp.Body.Close()
 	})
 
 	t.Run("Verification required", func(t *testing.T) {
@@ -179,7 +181,8 @@ func TestVirtualEndpointBatch(t *testing.T) {
 		globalConf.ProxySSLInsecureSkipVerify = false
 		config.SetGlobal(globalConf)
 
-		ts.Run(t, test.TestCase{Path: "/virt", Code: 500})
+		resp, _ := ts.Run(t, test.TestCase{Path: "/virt", Code: 500})
+		defer resp.Body.Close()
 	})
 
 }
