@@ -59,14 +59,14 @@ go build "$race" -o ./test/goplugins/goplugins.so -buildmode=plugin ./test/goplu
   || fatal "Building goplugins failed"
 
 for pkg in $pkgs; do
-  tags=()
+  tags=
 
   # TODO: Remove skip_race variable after solving race conditions in tests.
   skip_race=false
   if [[ $pkg == *"grpc" ]]; then
     skip_race=true
   elif [[ $pkg == *"goplugin" ]]; then
-    tags+=("-tags 'goplugin'")
+    tags="-tags 'goplugin'"
   fi
 
   # Build up an array of arguments to pass to 'go test'
@@ -83,8 +83,8 @@ for pkg in $pkgs; do
     test_args+=(-race)
   fi
 
-  show go test "${test_args[@]}" "${tags[@]}" "$pkg" \
+  show go test "${test_args[@]}" "$tags" "$pkg" \
     || fatal "go test failed"
-  show go vet "${tags[@]}" "$pkg" \
+  show go vet "$tags" "$pkg" \
     || fatal "go vet errored"
 done
