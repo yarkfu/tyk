@@ -3,12 +3,6 @@ set -euo pipefail
 
 test_timeout=5m
 
-# Print a command and execute it
-show() {
-  echo "$@" >&2
-  eval "$@"
-}
-
 fatal() {
   printf "%s\n" "$@" >&2
   exit 1
@@ -83,8 +77,8 @@ for pkg in $pkgs; do
     test_args+=(-race)
   fi
 
-  show go test "${test_args[@]}" "$tags" "$pkg" \
-    || fatal "go test failed"
-  show go vet "$tags" "$pkg" \
-    || fatal "go vet errored"
+  set -x
+  go test "${test_args[@]}" "$tags" "$pkg"
+  go vet "$tags" "$pkg"
+  set +x
 done
