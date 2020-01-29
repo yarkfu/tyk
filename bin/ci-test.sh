@@ -60,14 +60,14 @@ for pkg in $pkgs; do
   if [[ $pkg == *"grpc" ]]; then
     skip_race=true
   elif [[ $pkg == *"goplugin" ]]; then
-    tags="-tags='goplugin'"
+    tags="-tags=goplugin"
   fi
 
   # Build up an array of arguments to pass to 'go test'
   test_args=(
+    -coverprofile test.cov
+    -timeout "$test_timeout"
     -v
-    "-coverprofile=test.cov"
-    "-timeout=$test_timeout"
   )
 
   # Some tests should not be run with -race.
