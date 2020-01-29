@@ -162,6 +162,7 @@ func TestResponseOverride(t *testing.T) {
 	customBody := `foobar`
 
 	testOverride := func(t *testing.T, bundle string) {
+		t.Helper()
 		BuildAndLoadAPI(func(spec *APISpec) {
 			spec.Proxy.ListenPath = "/test/"
 			spec.UseKeylessAccess = true
