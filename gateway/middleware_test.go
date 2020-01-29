@@ -14,9 +14,9 @@ func TestBaseMiddleware_getAuthType(t *testing.T) {
 		"authToken": {AuthHeaderName: "h1"},
 		"basic":     {AuthHeaderName: "h2"},
 		//"coprocess": {AuthHeaderName: "h3"},
-		"hmac":      {AuthHeaderName: "h4"},
-		"jwt":       {AuthHeaderName: "h5"},
-		"oauth":     {AuthHeaderName: "h6"},
+		"hmac":  {AuthHeaderName: "h4"},
+		"jwt":   {AuthHeaderName: "h5"},
+		"oauth": {AuthHeaderName: "h6"},
 	}
 
 	baseMid := BaseMiddleware{Spec: spec}
