@@ -80,5 +80,5 @@ for pkg in $pkgs; do
   set -x
   go test "${test_args[@]}" "$tags" "$pkg"
   go vet "$tags" "$pkg"
-  set +x
+  { set +x; } &> /dev/null
 done
