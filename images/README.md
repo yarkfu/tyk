@@ -25,7 +25,7 @@ gateway version you are using.
 This also implies that if your plugin has vendored modules that are
 [also used by Tyk
 gateway](https://github.com/TykTechnologies/tyk/tree/master/vendor)
-then your module will be overridden by the version that Tyk uses. 
+then your module will be overridden by the version that Tyk uses.
 
 ``` shell
 cd ${GOPATH}/src/tyk-plugin

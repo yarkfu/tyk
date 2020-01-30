@@ -1,27 +1,33 @@
 FROM golang:1.12
 LABEL io.tyk.vendor="Tyk" \
-      version="1.0" \
-      description="Base image for builds"
+  version="1.0" \
+  description="Base image for builds"
 
 ENV GOPATH=/
 
-RUN apt-get update && apt-get dist-upgrade -y && \
-    apt-get install -y ca-certificates \
-                       git \
-                       locales \
-                       curl \
-                       jq \
-                       rpm \
-                       build-essential \
-                       libluajit-5.1-2 \
-                       libluajit-5.1-dev \
-                       luarocks \
-                       python3-setuptools \
-                       python3-dev \
-                       python3-pip \
-                       ruby-dev 
+RUN mkdir -pv ~/rpmbuild/SOURCES ~/rpmbuild/SPECS
+
+RUN apt-get update \
+  && apt-get dist-upgrade --assume-yes \
+  && apt-get install --assume-yes --no-install-recommends \
+  build-essential \
+  ca-certificates \
+  curl \
+  git \
+  jq \
+  libluajit-5.1-2 \
+  libluajit-5.1-dev \
+  locales \
+  luarocks \
+  python3-dev \
+  python3-pip \
+  python3-setuptools \
+  rpm \
+  ruby-dev \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 RUN luarocks install lua-cjson
 RUN pip3 install grpcio protobuf
-RUN mkdir -p $GOPATH ~/rpmbuild/SOURCES ~/rpmbuild/SPECS
 RUN go get github.com/mitchellh/gox
 RUN gem install fpm rake package_cloud
