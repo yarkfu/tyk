@@ -30,7 +30,9 @@ RUN gem install fpm rake package_cloud
 
 VOLUME [ "/go/src/github.com/TykTechnologies/tyk" ]
 
-ENV GO111MODULE auto
+WORKDIR /go/src/github.com/TykTechnologies/tyk
+
+ENV GO111MODULE=auto
 
 COPY data/test.sh /test.sh
 RUN chmod -c +x /test.sh
