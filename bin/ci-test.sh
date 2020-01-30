@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-test_timeout=5m
-
-fatal() {
+function fatal() {
   printf "%s\n" "$@" >&2
   exit 1
 }
@@ -11,6 +9,8 @@ fatal() {
 if [ -z "${GOPATH:-}" ]; then
   fatal "GOPATH is not defined"
 fi
+
+test_timeout=5m
 
 race=""
 if [[ -n ${LATEST_GO:-} ]]; then
