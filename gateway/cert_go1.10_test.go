@@ -69,7 +69,8 @@ func TestPublicKeyPinning(t *testing.T) {
 			spec.Proxy.TargetURL = upstream.URL
 		})
 
-		ts.Run(t, test.TestCase{Code: 200})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Code: 200})
 	})
 
 	t.Run("Pub key not match", func(t *testing.T) {
@@ -82,7 +83,8 @@ func TestPublicKeyPinning(t *testing.T) {
 			spec.Proxy.TargetURL = upstream.URL
 		})
 
-		ts.Run(t, test.TestCase{Code: 500})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Code: 500})
 	})
 
 	t.Run("Global setting", func(t *testing.T) {
@@ -99,7 +101,8 @@ func TestPublicKeyPinning(t *testing.T) {
 			spec.Proxy.TargetURL = upstream.URL
 		})
 
-		ts.Run(t, test.TestCase{Code: 500})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Code: 500})
 	})
 
 	t.Run("Though proxy", func(t *testing.T) {
@@ -125,7 +128,8 @@ func TestPublicKeyPinning(t *testing.T) {
 			spec.PinnedPublicKeys = map[string]string{"*": "wrong"}
 		})
 
-		ts.Run(t, test.TestCase{Code: 500})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Code: 500})
 	})
 
 	t.Run("Enable Common Name check", func(t *testing.T) {
@@ -191,7 +195,8 @@ func TestPublicKeyPinning(t *testing.T) {
 				spec.PinnedPublicKeys = map[string]string{"*": "wrong"}
 			}}...)
 
-		ts.Run(t, []test.TestCase{
+		//nolint:bodyclose
+		_, _ = ts.Run(t, []test.TestCase{
 			{Code: 200, Path: "/valid"},
 			{Code: 500, Path: "/invalid"},
 		}...)
@@ -222,7 +227,8 @@ func TestProxyTransport(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 			spec.Proxy.TargetURL = upstream.URL
 		})
-		ts.Run(t, test.TestCase{Path: "/", Code: 200})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Path: "/", Code: 200})
 	})
 
 	t.Run("Global: Cipher not match", func(t *testing.T) {
@@ -237,7 +243,8 @@ func TestProxyTransport(t *testing.T) {
 			spec.Proxy.ListenPath = "/"
 			spec.Proxy.TargetURL = upstream.URL
 		})
-		ts.Run(t, test.TestCase{Path: "/", Code: 500})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Path: "/", Code: 500})
 	})
 
 	t.Run("API: Cipher override", func(t *testing.T) {
@@ -254,7 +261,8 @@ func TestProxyTransport(t *testing.T) {
 			spec.Proxy.Transport.SSLCipherSuites = []string{"TLS_RSA_WITH_AES_128_CBC_SHA"}
 		})
 
-		ts.Run(t, test.TestCase{Path: "/", Code: 200})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Path: "/", Code: 200})
 	})
 
 	t.Run("API: MinTLS not match", func(t *testing.T) {
@@ -271,7 +279,8 @@ func TestProxyTransport(t *testing.T) {
 			spec.Proxy.Transport.SSLCipherSuites = []string{"TLS_RSA_WITH_AES_128_CBC_SHA"}
 		})
 
-		ts.Run(t, test.TestCase{Path: "/", Code: 500})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Path: "/", Code: 500})
 	})
 
 	t.Run("API: Invalid proxy", func(t *testing.T) {
@@ -290,7 +299,8 @@ func TestProxyTransport(t *testing.T) {
 			spec.Proxy.Transport.ProxyURL = upstream.URL
 		})
 
-		ts.Run(t, test.TestCase{Path: "/", Code: 500})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Path: "/", Code: 500})
 	})
 
 	t.Run("API: Valid proxy", func(t *testing.T) {
@@ -318,6 +328,7 @@ func TestProxyTransport(t *testing.T) {
 		client.Transport = &http.Transport{
 			TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
 		}
-		ts.Run(t, test.TestCase{Path: "/", Code: 200, Client: client})
+		//nolint:bodyclose
+		_, _ = ts.Run(t, test.TestCase{Path: "/", Code: 200, Client: client})
 	})
 }
