@@ -20,4 +20,10 @@ mkdir -p "$ATHENS_STORAGE"
 
 docker-compose build --compress --force-rm
 
+set +e
 docker-compose run --rm tyk-gateway-test-env "$1" "$2"
+set -e
+
+docker-compose stop
+
+echo "Don't forget to run 'docker-compose down' when you're finished!"

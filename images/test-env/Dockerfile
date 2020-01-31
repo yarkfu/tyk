@@ -1,4 +1,4 @@
-FROM golang:1.12
+FROM golang:1.13
 LABEL io.tyk.vendor="Tyk" \
   version="1.0" \
   description="Base image for CI tests"

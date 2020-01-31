@@ -5,7 +5,7 @@ services:
     volumes:
       - $HOME/go/src/github.com/TykTechnologies/tyk:/go/src/github.com/TykTechnologies/tyk
     environment:
-      GOPROXY: http://localhost:3000
+      GOPROXY: http://athens-proxy:3000
     depends_on:
       - athens-proxy
       - tyk-redis
@@ -13,7 +13,7 @@ services:
   athens-proxy:
     image: gomods/athens:latest
     volumes:
-      - $ATHENS_STORAGE:/var/lib/athens
+      - ${ATHENS_STORAGE:?should be defined in test-run.sh}:/var/lib/athens
     environment:
       ATHENS_DISK_STORAGE_ROOT: /var/lib/athens
       ATHENS_STORAGE_TYPE: disk

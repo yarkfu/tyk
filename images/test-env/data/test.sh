@@ -25,18 +25,25 @@ fi
 pkg_name=$1
 test_name=$2
 
+if [ "$(curl --silent "$(go env GOPROXY)")" != '"Welcome to The Athens Proxy"' ]; then
+  fatal "Tyk Gateway container could not reach the Athens proxy."
+fi
+
 echo
 printf "Will run test '%s' in the '%s' package.\n" "$test_name" "$pkg_name"
 echo
-echo "Getting dependencies for tests..."
-go get -t -v "$pkg_name"
+echo "Getting dependencies for tests... (GOPROXY=$(go env GOPROXY))"
+go get -t "$pkg_name"
 
+# Used in /coprocess/python/
 export PKG_PATH=$GOPATH/src/github.com/TykTechnologies/tyk
 
+echo
 echo "Building goplugins used in tests..."
 go build -race -o ./test/goplugins/goplugins.so -buildmode=plugin ./test/goplugins \
   || fatal "Building goplugins failed"
 
+echo "Collecting a list of arguments to pass to 'go'..."
 tags=
 
 # TODO: Remove skip_race variable after solving race conditions in tests.
@@ -47,7 +54,6 @@ elif [[ $pkg_name == *"goplugin" ]]; then
   tags="-tags=goplugin"
 fi
 
-# Build up an array of arguments to pass to 'go test'
 test_args=()
 
 if [ "$skip_race" -eq 0 ]; then
@@ -60,6 +66,7 @@ test_args+=(
   -v
 )
 
+echo
 echo "Running test(s)..."
 set -x
 go test "${test_args[@]}" "$tags" "$pkg_name"
