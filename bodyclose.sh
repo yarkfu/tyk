@@ -45,5 +45,7 @@ sleep 30s
 
 while [[ $(build_state) == "started" ]]; do
   date
-  sleep 1s
+  sleep 5s
 done
+
+build_state
