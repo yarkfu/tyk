@@ -5,7 +5,9 @@ services:
     volumes:
       - $HOME/go/src/github.com/TykTechnologies/tyk:/go/src/github.com/TykTechnologies/tyk
     environment:
+      GO111MODULE: auto
       GOPROXY: http://athens-proxy:3000
+      TYK_GW_STORAGE_HOST: "tyk-redis"
     depends_on:
       - athens-proxy
       - tyk-redis
