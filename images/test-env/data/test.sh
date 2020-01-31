@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -euo pipefail
 
 function fatal() {
   printf "%s\n" "$@" >&2
@@ -14,39 +14,54 @@ test_timeout=5m
 
 # TODO(jlucktay): add linters
 
-pkgs="$(go list ./...)"
+if [ -z "$1" ]; then
+  fatal "A package path must be specified as the first argument, e.g. 'github.com/TykTechnologies/tyk/gateway'"
+fi
 
-go get -t
+if [ -z "$2" ]; then
+  fatal "A Go test name must be specified as the second argument, e.g. 'TestAPICertificate/Cert_unknown'"
+fi
+
+pkg_name=$1
+test_name=$2
+
+echo
+printf "Will run test '%s' in the '%s' package.\n" "$test_name" "$pkg_name"
+echo
+echo "Getting dependencies for tests..."
+go get -t -v "$pkg_name"
 
 export PKG_PATH=$GOPATH/src/github.com/TykTechnologies/tyk
 
-# Build goplugins used in tests
+echo "Building goplugins used in tests..."
 go build -race -o ./test/goplugins/goplugins.so -buildmode=plugin ./test/goplugins \
   || fatal "Building goplugins failed"
 
-for pkg in $pkgs; do
-  tags=
+tags=
 
-  # TODO: Remove skip_race variable after solving race conditions in tests.
-  skip_race=0
-  if [[ $pkg == *"grpc" ]]; then
-    skip_race=1
-  elif [[ $pkg == *"goplugin" ]]; then
-    tags="-tags=goplugin"
-  fi
+# TODO: Remove skip_race variable after solving race conditions in tests.
+skip_race=0
+if [[ $pkg_name == *"grpc" ]]; then
+  skip_race=1
+elif [[ $pkg_name == *"goplugin" ]]; then
+  tags="-tags=goplugin"
+fi
 
-  # Build up an array of arguments to pass to 'go test'
-  test_args=(
-    -timeout "$test_timeout"
-    -v
-  )
+# Build up an array of arguments to pass to 'go test'
+test_args=()
 
-  if [ "$skip_race" -eq 0 ]; then
-    test_args+=(-race)
-  fi
+if [ "$skip_race" -eq 0 ]; then
+  test_args+=(-race)
+fi
 
-  set -x
-  go test "${test_args[@]}" "$tags" "$pkg"
-  go vet "$tags" "$pkg"
-  { set +x; } &> /dev/null
-done
+test_args+=(
+  -run "$test_name"
+  -timeout "$test_timeout"
+  -v
+)
+
+echo "Running test(s)..."
+set -x
+go test "${test_args[@]}" "$tags" "$pkg_name"
+go vet "$tags" "$pkg_name"
+{ set +x; } &> /dev/null

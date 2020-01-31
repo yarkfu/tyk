@@ -1,0 +1,26 @@
+version: "3.7"
+services:
+  tyk-gateway-test-env:
+    build: .
+    volumes:
+      - $HOME/go/src/github.com/TykTechnologies/tyk:/go/src/github.com/TykTechnologies/tyk
+    environment:
+      GOPROXY: http://localhost:3000
+    depends_on:
+      - athens-proxy
+      - tyk-redis
+
+  athens-proxy:
+    image: gomods/athens:latest
+    volumes:
+      - $ATHENS_STORAGE:/var/lib/athens
+    environment:
+      ATHENS_DISK_STORAGE_ROOT: /var/lib/athens
+      ATHENS_STORAGE_TYPE: disk
+    expose:
+      - "3000"
+
+  tyk-redis:
+    image: redis:latest
+    expose:
+      - "6379"
