@@ -21,31 +21,41 @@ function build_state() {
     | jq --raw-output --sort-keys '.last_build.state'
 }
 
-# Apply diffs from this commit until the repo gets dirty
-for altered_file in $(gitdw diff-tree --no-commit-id --name-only -r "$sha"); do
-  echo "file: '$altered_file'"
-  patch=$(gitdw show --patch "$sha" -- "$altered_file")
+while true; do
+  # Apply diffs from this commit until the repo gets dirty
+  for altered_file in $(gitdw diff-tree --no-commit-id --name-only -r "$sha"); do
+    echo "file: '$altered_file'"
+    patch=$(gitdw show --patch "$sha" -- "$altered_file")
 
-  # Restart the loop if the patch doesn't apply cleanly
-  if ! gitdw apply --ignore-space-change --ignore-whitespace --whitespace=fix <<< "$patch"; then
-    continue
-  fi
+    # Restart the loop if the patch doesn't apply cleanly
+    if ! gitdw apply --ignore-space-change --ignore-whitespace --whitespace=fix <<< "$patch"; then
+      continue
+    fi
 
-  # If the patch applied successfully, and the repo is now dirty, add+commit+push
-  if ! gitdw diff-index --quiet HEAD --; then
-    gitdw add "$altered_file"
-    gitdw commit -m"Add bodyclose changes for '$altered_file'."
-    gitdw push
-    break
+    # If the patch applied successfully, and the repo is now dirty, add+commit+push
+    if ! gitdw diff-index --quiet HEAD --; then
+      gitdw add "$altered_file"
+      gitdw commit -m"Add bodyclose changes for '$altered_file'."
+      gitdw push
+      break
+    fi
+  done
+
+  # Start watching Travis, after giving it a chance to start the next run
+  sleep 30s
+
+  while [ "$(build_state)" == "started" ]; do
+    date
+    sleep 5s
+  done
+
+  state=$(build_state)
+
+  echo
+  echo "State of last build: '$state'"
+  echo
+
+  if [ "$state" != "passed" ]; then
+    exit 1
   fi
 done
-
-# Start watching Travis, after giving it a chance to start the next run
-sleep 30s
-
-while [[ $(build_state) == "started" ]]; do
-  date
-  sleep 5s
-done
-
-build_state
