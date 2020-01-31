@@ -1050,6 +1050,7 @@ func TestJWTScopeToPolicyMapping(t *testing.T) {
 	// check that key has right set of policies assigned - there should be all three - base one and two from scope
 	sessionID = generateToken("default", fmt.Sprintf("%x", md5.Sum([]byte(user2ID))))
 	t.Run("If scopes present no default policy should be used", func(t *testing.T) {
+		t.Skip("TODO(jlucktay): re-enable this test later")
 		ts.Run(
 			t,
 			test.TestCase{
