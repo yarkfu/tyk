@@ -543,7 +543,10 @@ func (d *DummyProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		handler.ServeHTTP(w, r)
 	} else {
-		d.SH.ServeHTTP(w, r)
+		resp := d.SH.ServeHTTP(w, r)
+		if resp != nil {
+			defer resp.Body.Close()
+		}
 	}
 }
 
