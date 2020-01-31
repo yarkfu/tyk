@@ -21,6 +21,12 @@ function build_state() {
     | jq --raw-output --sort-keys '.last_build.state'
 }
 
+# Don't start a new loop if the last one didn't pass
+if [ "$(build_state)" != "passed" ]; then
+  echo "The previous build did not pass!"
+  exit 1
+fi
+
 while true; do
   # Apply diffs from this commit until the repo gets dirty
   for altered_file in $(gitdw diff-tree --no-commit-id --name-only -r "$sha"); do
