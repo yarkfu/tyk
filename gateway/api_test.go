@@ -52,10 +52,11 @@ func TestHealthCheckEndpoint(t *testing.T) {
 
 	BuildAndLoadAPI()
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Path: "/tyk/health/?api_id=test", AdminAuth: true, Code: 200},
 		{Path: "/tyk/health/?api_id=unknown", AdminAuth: true, Code: 404, BodyMatch: `"message":"API ID not found"`},
 	}...)
+	defer resp.Body.Close()
 }
 
 func TestApiHandlerPostDupPath(t *testing.T) {
@@ -173,15 +174,16 @@ func TestKeyHandler(t *testing.T) {
 	withBadPolicyJSON, _ := json.Marshal(withBadPolicy)
 
 	t.Run("Create key", func(t *testing.T) {
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			// Master keys should be disabled by default
 			{Method: "POST", Path: "/tyk/keys/create", Data: string(masterKeyJSON), AdminAuth: true, Code: 400, BodyMatch: "Failed to create key, keys must have at least one Access Rights record set."},
 			{Method: "POST", Path: "/tyk/keys/create", Data: string(withAccessJSON), AdminAuth: true, Code: 200},
 		}...)
+		defer resp.Body.Close()
 	})
 
 	t.Run("Create key with policy", func(t *testing.T) {
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{
 				Method:    "POST",
 				Path:      "/tyk/keys/create",
@@ -235,6 +237,7 @@ func TestKeyHandler(t *testing.T) {
 				BodyMatch: `"quota_remaining":4`,
 			},
 		}...)
+		defer resp.Body.Close()
 
 		FallbackKeySesionManager.Store().DeleteAllKeys()
 	})
@@ -253,20 +256,22 @@ func TestKeyHandler(t *testing.T) {
 	})
 
 	t.Run("Get key", func(t *testing.T) {
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/tyk/keys/unknown", AdminAuth: true, Code: 404},
 			{Method: "GET", Path: "/tyk/keys/" + knownKey, AdminAuth: true, Code: 200},
 			{Method: "GET", Path: "/tyk/keys/" + knownKey + "?api_id=test", AdminAuth: true, Code: 200},
 			{Method: "GET", Path: "/tyk/keys/" + knownKey + "?api_id=unknown", AdminAuth: true, Code: 200},
 		}...)
+		defer resp.Body.Close()
 	})
 
 	t.Run("List keys", func(t *testing.T) {
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Method: "GET", Path: "/tyk/keys/", AdminAuth: true, Code: 200, BodyMatch: knownKey},
 			{Method: "GET", Path: "/tyk/keys/?api_id=test", AdminAuth: true, Code: 200, BodyMatch: knownKey},
 			{Method: "GET", Path: "/tyk/keys/?api_id=unknown", AdminAuth: true, Code: 200, BodyMatch: knownKey},
 		}...)
+		defer resp.Body.Close()
 
 		globalConf := config.Global()
 		globalConf.HashKeyFunction = ""
@@ -292,32 +297,36 @@ func TestKeyHandler(t *testing.T) {
 
 		t.Run(`filter=""`, func(t *testing.T) {
 			resp, _ := ts.Run(t, test.TestCase{Method: "GET", Path: "/tyk/keys/", AdminAuth: true, Code: 200, BodyMatch: knownKey})
+			defer resp.Body.Close()
 			expected := []string{knownKey, unknownOrgKey, keyWithoutHash}
 			assert(resp, expected)
 		})
 
 		t.Run(`filter=orgID`, func(t *testing.T) {
 			resp, _ := ts.Run(t, test.TestCase{Method: "GET", Path: "/tyk/keys/?filter=" + "default", AdminAuth: true, Code: 200, BodyMatch: knownKey})
+			defer resp.Body.Close()
 			expected := []string{knownKey, keyWithoutHash}
 			assert(resp, expected)
 		})
 	})
 
 	t.Run("Update key", func(t *testing.T) {
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			// Without data
 			{Method: "PUT", Path: "/tyk/keys/" + knownKey, AdminAuth: true, Code: 400},
 			{Method: "PUT", Path: "/tyk/keys/" + knownKey, Data: string(withAccessJSON), AdminAuth: true, Code: 200},
 			{Method: "PUT", Path: "/tyk/keys/" + knownKey + "?api_id=test", Data: string(withAccessJSON), AdminAuth: true, Code: 200},
 			{Method: "PUT", Path: "/tyk/keys/" + knownKey + "?api_id=none", Data: string(withAccessJSON), AdminAuth: true, Code: 200},
 		}...)
+		defer resp.Body.Close()
 	})
 
 	t.Run("Delete key", func(t *testing.T) {
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Method: "DELETE", Path: "/tyk/keys/" + knownKey, AdminAuth: true, Code: 200, BodyMatch: `"action":"deleted"`},
 			{Method: "GET", Path: "/tyk/keys/" + knownKey, AdminAuth: true, Code: 404},
 		}...)
+		defer resp.Body.Close()
 	})
 }
 
@@ -367,9 +376,10 @@ func TestKeyHandler_UpdateKey(t *testing.T) {
 		sessionData, _ := json.Marshal(session)
 		path := fmt.Sprintf("/tyk/keys/%s", key)
 
-		_, _ = ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Method: http.MethodPut, Path: path, Data: sessionData, AdminAuth: true, Code: 200},
 		}...)
+		defer resp.Body.Close()
 
 		sessionState, found := FallbackKeySesionManager.SessionDetail(key, false)
 		if !found || sessionState.AccessRights[testAPIID].APIID != testAPIID || len(sessionState.ApplyPolicies) != 2 {
@@ -382,9 +392,10 @@ func TestKeyHandler_UpdateKey(t *testing.T) {
 		sessionData, _ := json.Marshal(session)
 		path := fmt.Sprintf("/tyk/keys/%s", key)
 
-		_, _ = ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			{Method: http.MethodPut, Path: path, Data: sessionData, AdminAuth: true, Code: 200},
 		}...)
+		defer resp.Body.Close()
 
 		sessionState, found := FallbackKeySesionManager.SessionDetail(key, false)
 		if !found || sessionState.AccessRights[testAPIID].APIID != testAPIID || len(sessionState.ApplyPolicies) != 0 {
@@ -397,9 +408,10 @@ func TestKeyHandler_UpdateKey(t *testing.T) {
 			sessionData, _ := json.Marshal(session)
 			path := fmt.Sprintf("/tyk/keys/%s", key)
 
-			_, _ = ts.Run(t, []test.TestCase{
+			resp, _ := ts.Run(t, []test.TestCase{
 				{Method: http.MethodPut, Path: path, Data: sessionData, AdminAuth: true, Code: 200},
 			}...)
+			defer resp.Body.Close()
 
 			sessionState, found := FallbackKeySesionManager.SessionDetail(key, false)
 
@@ -438,9 +450,10 @@ func TestKeyHandler_UpdateKey(t *testing.T) {
 			sessionData, _ := json.Marshal(session)
 			path := fmt.Sprintf("/tyk/keys/%s", key)
 
-			_, _ = ts.Run(t, []test.TestCase{
+			resp, _ := ts.Run(t, []test.TestCase{
 				{Method: http.MethodPut, Path: path, Data: sessionData, AdminAuth: true, Code: 200},
 			}...)
+			defer resp.Body.Close()
 
 			sessionState, found := FallbackKeySesionManager.SessionDetail(key, false)
 
@@ -537,7 +550,7 @@ func TestHashKeyHandlerLegacyWithHashFunc(t *testing.T) {
 	// create session with legacy key format
 	session := testPrepareBasicAuth(false)
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{
 			Method:    "POST",
 			Path:      "/tyk/keys/defaultuser",
@@ -552,12 +565,13 @@ func TestHashKeyHandlerLegacyWithHashFunc(t *testing.T) {
 			Code:      200,
 		},
 	}...)
+	defer resp.Body.Close()
 
 	// set custom hashing function and check if we still can get BA session with legacy key format
 	globalConf.HashKeyFunction = storage.HashMurmur64
 	config.SetGlobal(globalConf)
 
-	ts.Run(t, []test.TestCase{
+	resp, _ = ts.Run(t, []test.TestCase{
 		{
 			Method:    "GET",
 			Path:      "/tyk/keys/defaultuser?username=true&org_id=default",
@@ -572,6 +586,7 @@ func TestHashKeyHandlerLegacyWithHashFunc(t *testing.T) {
 			BodyMatch: `"action":"deleted"`,
 		},
 	}...)
+	defer resp.Body.Close()
 }
 
 func testHashKeyHandlerHelper(t *testing.T, expectedHashSize int) {
@@ -594,7 +609,7 @@ func testHashKeyHandlerHelper(t *testing.T, expectedHashSize int) {
 	}
 
 	t.Run("Create, get and delete key with key hashing", func(t *testing.T) {
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			// create key
 			{
 				Method:    "POST",
@@ -697,6 +712,7 @@ func testHashKeyHandlerHelper(t *testing.T, expectedHashSize int) {
 				Code:      404,
 			},
 		}...)
+		defer resp.Body.Close()
 	})
 }
 
@@ -706,7 +722,7 @@ func testHashFuncAndBAHelper(t *testing.T) {
 
 	session := testPrepareBasicAuth(false)
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{
 			Method:    "POST",
 			Path:      "/tyk/keys/defaultuser",
@@ -728,6 +744,7 @@ func testHashFuncAndBAHelper(t *testing.T) {
 			BodyMatch: `"action":"deleted"`,
 		},
 	}...)
+	defer resp.Body.Close()
 }
 
 func TestHashKeyListingDisabled(t *testing.T) {
@@ -755,7 +772,7 @@ func TestHashKeyListingDisabled(t *testing.T) {
 	myKeyHash := storage.HashKey(generateToken("default", myKey))
 
 	t.Run("Create, get and delete key with key hashing", func(t *testing.T) {
-		ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			// create key
 			{
 				Method:    "POST",
@@ -847,6 +864,7 @@ func TestHashKeyListingDisabled(t *testing.T) {
 				Code:      404,
 			},
 		}...)
+		defer resp.Body.Close()
 	})
 }
 
@@ -874,7 +892,7 @@ func TestKeyHandler_HashingDisabled(t *testing.T) {
 	myKeyHash := storage.HashKey(token)
 
 	t.Run("Create, get and delete key with key hashing", func(t *testing.T) {
-		_, _ = ts.Run(t, []test.TestCase{
+		resp, _ := ts.Run(t, []test.TestCase{
 			// create key
 			{
 				Method:       "POST",
@@ -931,6 +949,7 @@ func TestKeyHandler_HashingDisabled(t *testing.T) {
 				Code:      200,
 			},
 		}...)
+		defer resp.Body.Close()
 	})
 }
 
@@ -940,10 +959,11 @@ func TestInvalidateCache(t *testing.T) {
 
 	BuildAndLoadAPI()
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Method: "DELETE", Path: "/tyk/cache/test", AdminAuth: true, Code: 200},
 		{Method: "DELETE", Path: "/tyk/cache/test/", AdminAuth: true, Code: 200},
 	}...)
+	defer resp.Body.Close()
 }
 
 func TestGetOAuthClients(t *testing.T) {
@@ -962,12 +982,13 @@ func TestGetOAuthClients(t *testing.T) {
 	}
 	validOauthRequest, _ := json.Marshal(oauthRequest)
 
-	ts.Run(t, []test.TestCase{
+	resp, _ := ts.Run(t, []test.TestCase{
 		{Path: "/tyk/oauth/clients/unknown", AdminAuth: true, Code: 404},
 		{Path: "/tyk/oauth/clients/test", AdminAuth: true, Code: 200, BodyMatch: `\[\]`},
 		{Method: "POST", Path: "/tyk/oauth/clients/create", AdminAuth: true, Data: string(validOauthRequest), Code: 200},
 		{Path: "/tyk/oauth/clients/test", AdminAuth: true, Code: 200, BodyMatch: `\[{"client_id":"test"`},
 	}...)
+	defer resp.Body.Close()
 }
 
 func TestCreateOAuthClient(t *testing.T) {
@@ -1066,17 +1087,15 @@ func TestCreateOAuthClient(t *testing.T) {
 	for testName, testData := range tests {
 		t.Run(testName, func(t *testing.T) {
 			requestData, _ := json.Marshal(testData.req)
-			ts.Run(
-				t,
-				test.TestCase{
-					Method:    http.MethodPost,
-					Path:      "/tyk/oauth/clients/create",
-					AdminAuth: true,
-					Data:      string(requestData),
-					Code:      testData.code,
-					BodyMatch: testData.bodyMatch,
-				},
-			)
+			resp, _ := ts.Run(t, test.TestCase{
+				Method:    http.MethodPost,
+				Path:      "/tyk/oauth/clients/create",
+				AdminAuth: true,
+				Data:      string(requestData),
+				Code:      testData.code,
+				BodyMatch: testData.bodyMatch,
+			})
+			defer resp.Body.Close()
 		})
 	}
 }
@@ -1124,17 +1143,15 @@ func TestUpdateOauthClientHandler(t *testing.T) {
 		PolicyID: "p1",
 	})
 
-	ts.Run(
-		t,
-		test.TestCase{
-			Method:    http.MethodPost,
-			Path:      "/tyk/oauth/clients/create",
-			AdminAuth: true,
-			Data:      b.String(),
-			Code:      http.StatusOK,
-			BodyMatch: `"client_id":"12345"`,
-		},
-	)
+	resp, _ := ts.Run(t, test.TestCase{
+		Method:    http.MethodPost,
+		Path:      "/tyk/oauth/clients/create",
+		AdminAuth: true,
+		Data:      b.String(),
+		Code:      http.StatusOK,
+		BodyMatch: `"client_id":"12345"`,
+	})
+	defer resp.Body.Close()
 
 	tests := map[string]struct {
 		req          NewClientRequest
@@ -1186,7 +1203,8 @@ func TestUpdateOauthClientHandler(t *testing.T) {
 				testCase.BodyNotMatch = testData.bodyNotMatch
 			}
 
-			ts.Run(t, testCase)
+			resp, _ := ts.Run(t, testCase)
+			defer resp.Body.Close()
 		})
 	}
 }
@@ -1388,5 +1406,6 @@ func TestApiLoaderLongestPathFirst(t *testing.T) {
 		})
 	}
 
-	ts.Run(t, testCases...)
+	//nolint:bodyclose
+	_, _ = ts.Run(t, testCases...)
 }

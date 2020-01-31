@@ -41,7 +41,7 @@ for altered_file in $(gitdw diff-tree --no-commit-id --name-only -r "$sha"); do
 done
 
 # Start watching Travis, after giving it a chance to start the next run
-sleep 20s
+sleep 30s
 
 while [[ $(build_state) == "started" ]]; do
   date
