@@ -6,6 +6,13 @@ IFS=$'\n\t'
 script_dir="$(cd "$(dirname "${BASH_SOURCE[-1]}")" &> /dev/null && pwd)"
 sha=093d88fb259128c2aa4097627c071c29c9042994
 
+# Make sure the Travis CLI client is installed, and has also logged in to generate a token
+if ! hash travis &> /dev/null || [ "$(grep -c access_token < "$HOME/.travis/config.yml")" -lt 1 ]; then
+  echo "Please install the Travis Client and run 'travis login':"
+  echo "- https://github.com/travis-ci/travis.rb"
+  exit 1
+fi
+
 # Run git commands in this repo
 function gitdw() {
   git --git-dir="$script_dir/.git" --work-tree="$script_dir" "$@"
