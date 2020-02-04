@@ -6,10 +6,6 @@ function fatal() {
   exit 1
 }
 
-if [ -z "${GOPATH:-}" ]; then
-  fatal "GOPATH is not defined"
-fi
-
 test_timeout=5m
 
 race=""
@@ -46,7 +42,7 @@ pkgs="$(go list ./...)"
 
 go get -t
 
-export PKG_PATH=$GOPATH/src/github.com/TykTechnologies/tyk
+export PKG_PATH=${GOPATH:?}/src/github.com/TykTechnologies/tyk
 
 # Build goplugins used in tests
 go build "$race" -o ./test/goplugins/goplugins.so -buildmode=plugin ./test/goplugins \

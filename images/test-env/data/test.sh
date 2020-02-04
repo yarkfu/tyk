@@ -6,10 +6,6 @@ function fatal() {
   exit 1
 }
 
-if [ -z "${GOPATH:-}" ]; then
-  fatal "GOPATH is not defined"
-fi
-
 test_timeout=5m
 
 # TODO(jlucktay): add linters
@@ -36,7 +32,7 @@ echo "Getting dependencies for tests... (GOPROXY=$(go env GOPROXY))"
 go get -t "$pkg_name"
 
 # Used in /coprocess/python/
-export PKG_PATH=$GOPATH/src/github.com/TykTechnologies/tyk
+export PKG_PATH=${GOPATH:?}/src/github.com/TykTechnologies/tyk
 
 echo
 echo "Building goplugins used in tests..."
