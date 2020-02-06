@@ -73,6 +73,7 @@ type SessionState struct {
 	BasicAuthData      struct {
 		Password string   `json:"password" msg:"password"`
 		Hash     HashType `json:"hash_type" msg:"hash_type"`
+		CheckKvStore bool `json:"check_kv_store" msg:"check_kv_store"`
 	} `json:"basic_auth_data" msg:"basic_auth_data"`
 	JWTData struct {
 		Secret string `json:"secret" msg:"secret"`

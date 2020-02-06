@@ -276,7 +276,7 @@ func (b *DefaultSessionManager) RemoveSession(orgID string, keyName string, hash
 	}
 }
 
-// SessionDetail returns the session detail using the storage engine (either in memory or Redis)
+// SessionDetail returns the session detail using the storage engine (Redis)
 func (b *DefaultSessionManager) SessionDetail(orgID string, keyName string, hashed bool) (user.SessionState, bool) {
 	var jsonKeyVal string
 	var err error

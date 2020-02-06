@@ -197,6 +197,13 @@ func (k *BasicAuthKeyIsValid) ProcessRequest(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
+	if session.BasicAuthData.CheckKvStore {
+		if session.BasicAuthData.Password, err = kvStore(username); err != nil {
+			logger.Warn("Failed password check: Could not retrieve the password for user %s due to this error: %v", username, err)
+			return k.handleAuthFail(w, r, token)
+		}
+	}
+
 	switch session.BasicAuthData.Hash {
 	case user.HashBCrypt:
 		if err := k.compareHashAndPassword(session.BasicAuthData.Password, password, logger); err != nil {
