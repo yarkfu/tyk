@@ -2,90 +2,79 @@
 
 set -ex
 
-: ${ORGDIR:="/go/src/github.com/TykTechnologies"}
-: ${SOURCEBINPATH:="${ORGDIR}/tyk"}
+# This depends on cwd being set correctly by the invoker (concourse)
+SRCDIR=${PWD}
+
+: ${GOPATH:="/go"}
+: ${GO15VENDOREXPERIMENT:=1}
 : ${SIGNKEY:="729EA673"}
 : ${BUILDPKGS:="1"}
 : ${PKGNAME:="tyk-gateway"}
-BUILDTOOLSDIR=$SOURCEBINPATH/build_tools
-BUILDDIR=$SOURCEBINPATH/build
+: ${RPMVERS:="el/6 el/7"}
+
+BUILDDIR=${SRCDIR}/build
+
+[ -f version.go ] && VERSION_FILE=version.go
+[ -f gateway/version.go ] && VERSION_FILE=gateway/version.go
+[ "$VERSION_FILE" ] || exit 1
+
+PATH=$PATH:${SRCDIR}/bin
 
 echo "Set version number"
-: ${VERSION:=$(perl -n -e'/v(\d+).(\d+).(\d+)/'' && print "$1\.$2\.$3"' version.go)}
+: ${VERSION:=$(perl -n -e'/v(\d+).(\d+).(\d+)/'' && print "$1\.$2\.$3"' gateway/version.go)}
 
 if [ $BUILDPKGS == "1" ]; then
     echo "Importing signing key"
-    gpg --list-keys | grep -w $SIGNKEY && echo "Key exists" || gpg --batch --import $BUILDTOOLSDIR/build_key.key
+    
+    cat > build_key.key <<EOF
+$GPG_PRIV_KEY
+EOF
+    gpg --list-keys | grep -w $SIGNKEY && echo "Key exists" || gpg --batch --import build_key.key
+    rm build_key.key
 fi
 
 echo "Prepare the release directories"
-
 export SOURCEBIN=tyk
-
-declare -A ARCHTGZDIRS
-ARCHTGZDIRS=(
-    [i386]=$BUILDDIR/i386/tgz/tyk.linux.i386-$VERSION
-    [amd64]=$BUILDDIR/amd64/tgz/tyk.linux.amd64-$VERSION
-    [arm64]=$BUILDDIR/arm/tgz/tyk.linux.arm64-$VERSION
-)
+TGZDIR=$BUILDDIR/$ARCH/tgz/tyk.linux.$ARCH-$VERSION
 
 DESCRIPTION="Tyk Open Source API Gateway written in Go"
-echo "Starting Tyk build"
-cd $SOURCEBINPATH
-
 echo "Moving vendor dir to GOPATH"
 yes | cp -r vendor ${GOPATH}/src/ && rm -rf vendor
 
 echo "Blitzing TGZ dirs"
-for arch in ${!ARCHTGZDIRS[@]}
-do
-    rm -rf ${ARCHTGZDIRS[$arch]}
-    mkdir -p ${ARCHTGZDIRS[$arch]}
-done
+rm -rf $TGZDIR
+mkdir -p $TGZDIR
 
+# go identifies the arch differently from the norm
+ARCH=${ARCH//i386/386}
 echo "Building Tyk binaries"
-gox -tags 'goplugin' -osarch="linux/amd64 linux/386" -cgo
-# Build arm64 without CGO (no Python plugins), an improved cross-compilation toolkit is needed for that
-gox -tags 'goplugin' -osarch="linux/arm64"
+gox -tags 'goplugin' -osarch="linux/$ARCH" 
 
-TEMPLATEDIR=${ARCHTGZDIRS[i386]}
 echo "Prepping TGZ Dirs"
-mkdir -p $TEMPLATEDIR/apps
-mkdir -p $TEMPLATEDIR/js
-mkdir -p $TEMPLATEDIR/middleware
-mkdir -p $TEMPLATEDIR/middleware/python
-mkdir -p $TEMPLATEDIR/middleware/lua
-mkdir -p $TEMPLATEDIR/event_handlers
-mkdir -p $TEMPLATEDIR/event_handlers/sample
-mkdir -p $TEMPLATEDIR/templates
-mkdir -p $TEMPLATEDIR/policies
-mkdir -p $TEMPLATEDIR/utils
-mkdir -p $TEMPLATEDIR/install
+mkdir -p $TGZDIR/apps
+mkdir -p $TGZDIR/js
+mkdir -p $TGZDIR/middleware
+mkdir -p $TGZDIR/middleware/python
+mkdir -p $TGZDIR/middleware/lua
+mkdir -p $TGZDIR/event_handlers
+mkdir -p $TGZDIR/event_handlers/sample
+mkdir -p $TGZDIR/templates
+mkdir -p $TGZDIR/policies
+mkdir -p $TGZDIR/utils
+mkdir -p $TGZDIR/install
 
-cp $SOURCEBINPATH/apps/app_sample.json $TEMPLATEDIR/apps
-cp $SOURCEBINPATH/templates/*.json $TEMPLATEDIR/templates
-cp -R $SOURCEBINPATH/install/* $TEMPLATEDIR/install
-cp $SOURCEBINPATH/middleware/*.js $TEMPLATEDIR/middleware
-cp $SOURCEBINPATH/event_handlers/sample/*.js $TEMPLATEDIR/event_handlers/sample
-cp $SOURCEBINPATH/policies/*.json $TEMPLATEDIR/policies
-cp $SOURCEBINPATH/tyk.conf.example $TEMPLATEDIR/
-cp $SOURCEBINPATH/tyk.conf.example $TEMPLATEDIR/tyk.conf
-cp -R $SOURCEBINPATH/coprocess $TEMPLATEDIR/
-
-# Clone template dir to all architectures and copy corresponding binaries
-for arch in ${!ARCHTGZDIRS[@]}
-do
-    archDir=${ARCHTGZDIRS[$arch]}
-    [ $archDir != $TEMPLATEDIR ] && cp -R $TEMPLATEDIR/* $archDir
-    mv tyk_linux_${arch/i386/386} $archDir/$SOURCEBIN
-done
+cp apps/app_sample.json $TGZDIR/apps
+cp templates/*.json $TGZDIR/templates
+cp -R install/* $TGZDIR/install
+cp middleware/*.js $TGZDIR/middleware
+cp event_handlers/sample/*.js $TGZDIR/event_handlers/sample
+cp policies/*.json $TGZDIR/policies
+cp tyk.conf.example $TGZDIR/
+cp tyk.conf.example $TGZDIR/tyk.conf
+cp -R coprocess $TGZDIR/
 
 echo "Compressing"
-for arch in ${!ARCHTGZDIRS[@]}
-do
-    cd ${ARCHTGZDIRS[$arch]}/../
-    tar -pczf ${ARCHTGZDIRS[$arch]}/../tyk-linux-$arch-$VERSION.tar.gz tyk.linux.$arch-$VERSION/
-done
+tar -C $TGZDIR -pczf ${TGZDIR}.tar.gz $TGZDIR
 
 # Nothing more to do if we're not going to build packages
 [ $BUILDPKGS != "1" ] && exit 0
@@ -107,14 +96,14 @@ FPMCOMMON=(
     -m "<info@tyk.io>"
     --url "https://tyk.io"
     -s dir
-    --before-install $TEMPLATEDIR/install/before_install.sh
-    --after-install $TEMPLATEDIR/install/post_install.sh
-    --after-remove $TEMPLATEDIR/install/post_remove.sh
+    --before-install $TGZDIR/install/before_install.sh
+    --after-install $TGZDIR/install/post_install.sh
+    --after-remove $TGZDIR/install/post_remove.sh
 )
 [ -z $PKGCONFLICTS ] || FPMCOMMON+=( --conflicts $PKGCONFLICTS )
 FPMRPM=(
-    --before-upgrade $TEMPLATEDIR/install/post_remove.sh
-    --after-upgrade $TEMPLATEDIR/install/post_install.sh
+    --before-upgrade $TGZDIR/install/post_remove.sh
+    --after-upgrade $TGZDIR/install/post_install.sh
 )
 
 cd $BUILDDIR
@@ -122,15 +111,14 @@ echo "Removing old packages"
 rm -f *.deb
 rm -f *.rpm
 
-for arch in ${!ARCHTGZDIRS[@]}
-do
-    archDir=${ARCHTGZDIRS[$arch]}
-    echo "Creating DEB Package for $arch"
-    fpm "${FPMCOMMON[@]}" -C $archDir -a $arch -t deb "${CONFIGFILES[@]}" ./=/opt/tyk-gateway
-    echo "Creating RPM Package for $arch"
-    fpm "${FPMCOMMON[@]}" "${FPMRPM[@]}" -C $archDir -a $arch -t rpm "${CONFIGFILES[@]}" ./=/opt/tyk-gateway
+echo "Creating DEB Package for $arch"
+fpm "${FPMCOMMON[@]}" -C $TGZDIR -a $ARCH -t deb "${CONFIGFILES[@]}" ./=/opt/tyk-gateway
+echo "Creating RPM Package for $arch"
+fpm "${FPMCOMMON[@]}" "${FPMRPM[@]}" -C $TGZDIR -a $ARCH -t rpm "${CONFIGFILES[@]}" ./=/opt/tyk-gateway
+rpmName="$PKGNAME-$VERSION-1.${arch/amd64/x86_64}.rpm"
+echo "Signing $arch RPM"
+rpm-sign.sh *.rpm
 
-    rpmName="$PKGNAME-$VERSION-1.${arch/amd64/x86_64}.rpm"
-    echo "Signing $arch RPM"
-    $BUILDTOOLSDIR/rpm-sign.sh $rpmName
-done
+# To provide a well-known output location for the invoker
+# output_mapping in the pipeline does the rest
+mkdir $BUILDDIR/pkgs && mv *.{deb,rpm} $BUILDDIR/pkgs

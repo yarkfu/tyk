@@ -1,0 +1,14 @@
+---
+platform: linux
+
+inputs:
+  - name: tyk
+  - name: builder
+
+run:
+  path: ls
+  dir: tyk
+  args: [-al]
+
+params:
+  PACKAGECLOUD_TOKEN: ((packagecloud_token))

@@ -2,6 +2,15 @@
 
 TEST_TIMEOUT=5m
 
+export GOPATH=/go
+export GO15VENDOREXPERIMENT=1
+export TYK_GW_STORAGE_HOST=redis
+export TYK_GW_STORAGE_PORT=6379
+export PKG_PATH=$GOPATH/src/github.com/TykTechnologies/tyk
+export PYTHON_VERSION=3.7
+
+rm -rf build
+
 # print a command and execute it
 show() {
 	echo "$@" >&2

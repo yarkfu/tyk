@@ -1,0 +1,25 @@
+version: '3.7'
+
+services:
+  concourse:
+    volumes:
+    - ./vault/certs:/vault-certs
+    environment:
+      CONCOURSE_VAULT_URL: https://vault:8200
+      CONCOURSE_VAULT_PATH_PREFIX: /concourse
+      CONCOURSE_VAULT_CLIENT_TOKEN: s.KtlWbTHz8TPQFhp7ysFUHiHC
+      CONCOURSE_VAULT_AUTH_BACKEND: approle
+      CONCOURSE_VAULT_AUTH_PARAM: role_id:1d1d4587-a96c-7fb3-f61e-8a7a179c8ad8,secret_id:7241a244-e1ed-933f-f0cd-36e9d3c15225
+      CONCOURSE_VAULT_CA_CERT: /vault-certs/vault-ca.crt
+      # CONCOURSE_VAULT_CLIENT_CERT: /vault-certs/concourse.crt
+      # CONCOURSE_VAULT_CLIENT_KEY: /vault-certs/concourse.key
+      # CONCOURSE_VAULT_AUTH_BACKEND: cert
+
+  vault:
+    image: vault
+    cap_add: [IPC_LOCK]
+    ports: ["8200:8200"]
+    volumes:
+    - ./vault/certs:/vault/certs
+    - ./vault/config:/vault/config
+    command: server

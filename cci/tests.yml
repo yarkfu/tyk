@@ -1,0 +1,19 @@
+version: "3.7"
+
+services:
+  myredis:
+    image: redis
+    container_name: myredis
+
+  tests:
+    image: golang:alpine
+    container_name: tests
+    depends_on:
+      - myredis
+    volumes:
+      - type: bind
+        source: ./gw
+        target: /go/src/github.com/TykTechnologies/tyk
+    environment:
+      GOPATH: /go
+    command: "cd /go/src/github.com/TykTechnologies/tyk && bin/ci-test.sh"

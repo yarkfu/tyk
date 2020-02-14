@@ -1,0 +1,10 @@
+version: '3.7'
+
+services:
+  gaia:
+    image: gaiapipeline/gaia
+    ports: ["8080:8080"]
+    volumes:
+      - type: bind
+        source: ./data
+        target: /data

@@ -1,0 +1,88 @@
+---
+resources:
+  - name: gw
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/TykTechnologies/tyk.git
+      branch: as/cci
+  - name: builder
+    type: docker-image
+    source: { repository: "tykio/tyk-build-env" }
+    
+jobs:
+  - name: test
+    public: true
+    plan:
+      - get: gw
+        trigger: true
+        params: { depth: 42 }
+      - get: builder
+      - task: test
+        file: gw/cci/tasks/test.yml
+  - name: build-amd64
+    public: true
+    plan:
+      - get: gw
+        params: { depth: 42 }
+        trigger: true
+        passed: [test]
+      - get: builder
+      - task: build
+        # relative paths are to be prefixed with `resource name`
+        file: gw/cci/tasks/build.yml
+        vars:
+          arch: amd64
+        output_mapping:
+          workspace: amd64-pkgs
+  - name: build-i386
+    public: true
+    plan:
+      - get: gw
+        params: { depth: 42 }
+        trigger: true
+        passed: [test]
+      - get: builder
+      - task: build
+        # relative paths are to be prefixed with `resource name`
+        file: gw/cci/tasks/build.yml
+        vars:
+          arch: i386
+        output_mapping:
+          workspace: i386-pkgs
+  - name: build-arm64
+    public: true
+    plan:
+      - get: gw
+        params: { depth: 42 }
+        trigger: true
+        passed: [testing]
+      - get: builder
+      - task: build
+        # relative paths are to be prefixed with `resource name`
+        file: gw/cci/tasks/build.yml
+        vars:
+          arch: arm64
+        output_mapping:
+          workspace: arm64-pkgs
+  - name: push-amd64
+    public: true
+    plan:
+      - get: builder
+        passed: [build-amd64]
+      - task: push
+        file: gw/cci/tasks/push.yml
+  - name: push-i386
+    public: true
+    plan:
+      - get: builder
+        passed: [build-i386]
+      - task: push
+        file: gw/cci/tasks/push.yml
+  - name: push-arm64
+    public: true
+    plan:
+      - get: builder
+        passed: [build-arm64]
+      - task: push
+        file: gw/cci/tasks/push.yml

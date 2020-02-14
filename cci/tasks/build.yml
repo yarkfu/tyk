@@ -1,0 +1,20 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: "tykio/tyk-build-env"
+inputs:
+  - name: tyk
+
+run:
+  path: bin/dist_build.sh
+  dir: tyk
+
+outputs:
+  - name: workspace
+    path: build/pkgs
+params:
+  GPG_PRIV_KEY: ((gpg_priv_key))
+  GPG_PASSPHRASE: ((gpg_passphrase))
+  ARCH: ((arch))
