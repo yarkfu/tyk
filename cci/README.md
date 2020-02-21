@@ -1,59 +1,18 @@
-# Release Management
-
-# Shoot out
-
-# Travis
-
-# Summary
-
-Being used for ci tests. 
-
-# Gaia
-
-# Summary
-
-The Web UI is essential. And will have to write a _lot_ of code for all our repos. Paused for now.
-
-## Setup
-
-Create a dir for the DB. It uses BoltDB.
-
-```shell
- mkdir data
-```
-
-`gaia.yml` is the compose file that spins it up. Useful aliases:
-
-``` shell
-alias gaia='docker-compose -f ${PWD}/gaia.yml -p gaia'
-```
-
-Login with admin/admin at localhost:8080
-
 # Concourse
 
 # Summary
 
-Concourse is a struggle to work with. Worked with it for 60% of a week
-with a few long multi-hour sessions.
+## AWS PoC
 
-Cons:
-- ~~idiosyncratic yaml syntax. cf. tasks/build.yaml:inputs~~.
-- docs are ok, many errors, dated to circa 2018
-- errors are cryptic, logs are prolix and useless
-- had to read source code to figure out yaml format
-- running redis in a sidecar for tests is hard due to [bug open since 2016](https://github.com/concourse/concourse/issues/324)
-- absolute paths are impossible to set but [there is hope](https://github.com/concourse/concourse/issues/4281)
+`control-tower` is based on [bosh](https://bosh.io) which has a lot of moving parts. This was discarded.
 
-Pros:
-- cool interactive runs that do not require a push
-- control-tower promises a lot
-- tasks have well defines inputs and outputs
-- can be integrated with vault in [theory](https://spr.com/how-to-automate-data-protection-using-concourse-ci-and-hashicorp-vault/), could not replicate
-- _everything_ is in code, functional CLI with completion
+Using the [helm chart](https://github.com/helm/charts/tree/master/stable/concourse) is not really suitable for a simple deployment. Concourse creates containers via Garden (which uses `runc`). Thus all concourse-worker pods have to run with `privileged: true` and they will spin up their own containers that the k8s pod scheduler will have no idea about. 
 
+The approach here is to define ansible playbooks to manage concourse. The base image was chosen to be CentOS for its ansible support.
 
-## Setup 
+<playbooks> contains the ansible config.
+
+## Local Setup 
 
 Create a volume for the DB. It uses Postgres.
 
