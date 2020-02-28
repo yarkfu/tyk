@@ -1,0 +1,18 @@
+{
+  "file_list": [
+    "middleware.so"
+  ],
+  "custom_middleware": {
+    "auth_check": {
+        "name": "MyPluginAuthCheck",
+        "path": "middleware.so"
+    },
+    "post": [
+        {
+            "name": "AddFooBarHeader",
+            "path": "middleware.so"
+        }
+    ],
+    "driver": "goplugin"
+  }
+}
